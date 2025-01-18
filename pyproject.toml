@@ -1,0 +1,45 @@
+[project]
+name = "SvgWorkbench"
+version = "1.0.0.dev0"
+description = "FreeCAD Svg Workbench"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "LGPL-3.0-or-later"
+
+maintainers = [
+    {name = "Frank David Martínez Muñoz", email = "mnesarco@gmail.com" }
+]
+
+authors = [
+    {name = "Frank David Martínez Muñoz", email = "mnesarco@gmail.com" }
+]
+
+keywords = ["svg", "2d", "freecad", "addons", "workbench"]
+
+[project.urls]
+repository = "https://github.com/mnesarco/SvgWorkbench/"
+documentation = "https://github.com/mnesarco/SvgWorkbench/wiki/"
+readme = "https://github.com/mnesarco/SvgWorkbench/blob/main/README.md"
+
+
+[dependency-groups]
+dev = [
+    "freecad-stubs>=1.0.17",
+    "PySide6",
+    "ipykernel",
+    "toml",
+    "typer",
+    "packaging",
+    "rich",
+]
+
+[tool.ruff]
+line-length = 100
+indent-width = 4
+
+[tool.freecad]
+icon = "freecad/svgwb/resources/icons/svgwb.svg"
+freecad-min = "1.0"
+lupdate-files = ["**/*.svg"]
+lupdate-langs = ["es", "en", "de", "fr"]
+internal-dependencies = ["TechDraw", "Draft", "Part"]
