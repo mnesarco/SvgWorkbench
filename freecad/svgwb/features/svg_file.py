@@ -120,19 +120,20 @@ class SvgFileFeature(fpo.DataProxy):
             file_name = Path(gettempdir()) / f"{uuid4()!s}.sqlite"
             db = SvgDatabase(file_name)
             db.initialize()
-            with db.add_many() as add:
-                for obj in result.objects():
-                    shape = obj.shape.to_shape()
-                    if shape:
-                        entity = SvgEntity(
-                            obj.id,
-                            obj.shape.tag,
-                            obj.shape.label,
-                            obj.path,
-                            obj.href,
-                            shape.exportBrepToString(),
-                        )
-                        add(entity)
+            shapes = ((obj, obj.shape.to_shape()) for obj in result.objects())
+            entities = (
+                SvgEntity(
+                    obj.id,
+                    obj.shape.tag,
+                    obj.shape.label,
+                    obj.path,
+                    obj.href,
+                    shape.exportBrepToString(),
+                )
+                for (obj, shape) in shapes
+                if shape
+            )
+            db.add_many_iter(entities)
             self.sql_file = str(file_name)
 
             if next(find_child_actions(self.Object), 0) == 0:

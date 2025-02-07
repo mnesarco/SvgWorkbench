@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
 from sqlite3 import Connection, connect
-from typing import Callable, Generator
+from typing import Callable, Generator, Iterable
 
 from Part import Shape  # type: ignore
 
@@ -176,3 +176,8 @@ class SvgDatabase:
                 self._add(entity, con)
 
             yield add
+
+    def add_many_iter(self, entities: Iterable[SvgEntity]) -> None:
+        with transaction(self.path) as con:
+            for e in entities:
+                self._add(e, con)
