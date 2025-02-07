@@ -9,7 +9,7 @@ from enum import Enum
 from typing import Any, Callable, Generator, TypeAlias
 
 from FreeCAD import BoundBox, Document, DocumentObject, Vector  # type: ignore
-from Part import Compound, Face, LineSegment, Shape, Vertex, Wire  # type: ignore
+from Part import Compound, Face, LineSegment, Shape, Vertex, Wire, Edge  # type: ignore
 from Part import makeCompound as make_compound  # type: ignore
 from Part import makePlane as make_plane  # type: ignore
 
@@ -18,6 +18,8 @@ from ..svg.database import SvgDatabase, SvgEntity
 from ..vendor.fcapi import fpo
 from ..vendor.fcapi.utils import run_later
 from .svg_object import SvgObjectFeature, SvgPartFeature, SvgPlaneFeature, SvgSketchFeature
+
+Z_DIR = Vector(0, 0, 1)
 
 
 class QueryType(Enum):
@@ -52,6 +54,19 @@ def bound_box_rect(box: BoundBox) -> Wire:
     return Wire(edges)
 
 
+def edge_to_plane(edge: Edge) -> Face:
+    MIN_PLANE_SIZE = 50
+    if edge.Orientation != "Forward":
+        edge.reverse()
+    start, end = edge.firstVertex().CenterOfGravity, edge.lastVertex().CenterOfGravity
+    line: Vector = end - start
+    tan: Vector = Vector(line).normalize()
+    size = max(line.Length, MIN_PLANE_SIZE)
+    start = (start + tan * ((line.Length - size) / 2.0)) + Vector(0, 0, size / 2.0)
+    normal = Z_DIR.cross(tan)
+    return make_plane(size, size, start, normal, tan)
+
+
 @dataclass
 class FeatureBuilder:
     feature: type[SvgObjectFeature]
@@ -79,7 +94,6 @@ class FeatureBuilder:
             return feature.add_to_document(parent.Document, parent)
 
 
-
 @fpo.view_proxy(icon=resources.icon("svg-query.svg"))
 class SvgActionViewProvider(fpo.ViewProxy):
     Default = fpo.DisplayMode(is_default=True)
@@ -87,6 +101,7 @@ class SvgActionViewProvider(fpo.ViewProxy):
     def on_edit_start(self, event) -> bool:
         if event.mode == fpo.EditMode.Default:
             from .svg_action_task import ActionTaskPanel
+
             self.task_panel = ActionTaskPanel(event.source.Proxy)
             self.task_panel.show()
             return True
@@ -98,6 +113,7 @@ class SvgActionViewProvider(fpo.ViewProxy):
     def on_dbl_click(self, event) -> bool:
         event.view_provider.Document.setEdit(self.Object, fpo.EditMode.Default)
         return True
+
 
 @fpo.proxy(view_proxy=SvgActionViewProvider, subtype="Svg::Action")
 class SvgActionFeature(fpo.DataProxy):
@@ -299,25 +315,7 @@ class SvgActionFeature(fpo.DataProxy):
         if shape is None or not shape.isValid() or shape.isNull():
             return None
 
-        planes = []
-        z = Vector(0, 0, 1)
-        MIN_PLANE_SIZE = 50
-        for edge in shape.Edges:
-            if edge.isClosed() or edge.Length < 1:
-                continue
-
-            if edge.Orientation != "Forward":
-                edge.reverse()
-
-            start, end = edge.firstVertex().CenterOfGravity, edge.lastVertex().CenterOfGravity
-            line: Vector = end - start
-            tan: Vector = Vector(line).normalize()
-            size = max(line.Length, MIN_PLANE_SIZE)
-            start = (start + tan * ((line.Length - size) / 2.0)) + Vector(0, 0, size / 2.0)
-            normal = z.cross(tan)
-            plane = make_plane(size, size, start, normal, tan)
-            planes.append(plane)
-
+        planes = [edge_to_plane(e) for e in shape.Edges if not e.isClosed() and e.Length >= 1]
         if len(planes) == 1:
             return planes[0]
 
