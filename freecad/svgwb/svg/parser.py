@@ -356,7 +356,8 @@ def parse(filename: str | Path, preferences: SvgImportPreferences, dpi_fallback:
     BUFFER_SIZE = 4096
     hasher = md5(usedforsecurity=False)
     with Path(filename).open("rb") as f:
-        hasher.update(f.read(BUFFER_SIZE))
+        while data := f.read(BUFFER_SIZE):
+            hasher.update(data)
     file_hash = hasher.hexdigest()
 
     with Path(filename).open() as f:
