@@ -2,10 +2,8 @@
 
 Dedicated workbench for imported svg geometry manipulation.
 
-<span color="red">
-This workbench is in early development, not released yet for
-prime usage.
-</span>
+> [!CAUTION]
+> This workbench is in early development, not released yet for prime usage.
 
 ## Features
 
