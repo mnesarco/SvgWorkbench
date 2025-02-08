@@ -11,7 +11,7 @@
             <icon>freecad/svgwb/resources/icons/svgwb.svg</icon>
         </workbench>
     </content>
-    <date>2025-02-07</date>
+    <date>2025-02-08</date>
     <pythonmin>3.10</pythonmin>
     <icon>freecad/svgwb/resources/icons/svgwb.svg</icon>
     <license file="LICENSE">LGPL-3.0-or-later</license>
@@ -20,7 +20,7 @@
     <description>FreeCAD Svg Workbench</description>
     <version>1.0.0.dev0</version>
     <license>LGPL-3.0-or-later</license>
-    <date>2025-02-07</date>
+    <date>2025-02-08</date>
     <pythonmin>3.10</pythonmin>
     <icon>freecad/svgwb/resources/icons/svgwb.svg</icon>
     <freecadmin>1.0</freecadmin>
@@ -32,7 +32,7 @@
     <tag>svg</tag>
     <tag>workbench</tag>
     <url type="documentation">https://github.com/mnesarco/SvgWorkbench/wiki/</url>
-    <url type="readme">https://github.com/mnesarco/SvgWorkbench/blob/master/README.md</url>
+    <url type="readme">https://github.com/mnesarco/SvgWorkbench/blob/main/README.md</url>
     <url type="repository">https://github.com/mnesarco/SvgWorkbench/</url>
     <depend type="internal">Draft</depend>
     <depend type="internal">Part</depend>

@@ -476,7 +476,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../svg/export.py" line="231"/>
+        <location filename="../../svg/export.py" line="235"/>
         <source>The export list contains no object with a valid bounding box</source>
         <translation type="unfinished"></translation>
     </message>

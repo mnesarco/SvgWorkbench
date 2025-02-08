@@ -40,6 +40,6 @@ indent-width = 4
 [tool.freecad]
 icon = "freecad/svgwb/resources/icons/svgwb.svg"
 freecad-min = "1.0"
-lupdate-files = ["**/*.svg"]
+# lupdate-files = []
 lupdate-langs = ["es", "en", "de", "fr"]
 internal-dependencies = ["TechDraw", "Draft", "Part"]
