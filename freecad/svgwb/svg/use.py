@@ -14,7 +14,7 @@ from .cache import cached_copy, cached_copy_list, cached_property
 from .object import SvgObject
 
 def id_hash(parent: str, child: str) -> str:
-    return f"S{hex(hash((parent, child)))[2:]}_{child.split('_')[-1]}"
+    return f"{parent}_{child}"
 
 @dataclass
 class SvgUse(SvgShape):
