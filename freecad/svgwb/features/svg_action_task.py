@@ -80,15 +80,18 @@ class ActionTaskPanel(ui.TaskPanel):
 
     def build(self):
         with ui.Dialog() as form:
-            with ui.Col():
-                with ui.Row():
-                    self.query = ui.InputOptions(
-                        QueryTypeDict,
-                        value=self.action.query_type,
-                    )
-                    self.pattern = ui.InputText(value=self.action.query)
-
+            with ui.GroupBox(title=translate("SvgWB", "Query")):
+                self.query = ui.InputOptions(
+                    QueryTypeDict,
+                    value=self.action.query_type,
+                    label=translate("SvgWB", "Filter criteria:")
+                )
+                self.pattern = ui.InputText(
+                    value=self.action.query,
+                    label=translate("SvgWB", "Filter pattern:"))
+            with ui.GroupBox(title=translate("SvgWB", "Filter result")):
                 self.results = ResultsTree(self.action)
+            with ui.GroupBox(title=translate("SvgWB", "Output")):
                 self.output = ui.InputOptions(
                     OutputTypeDict,
                     value=self.action.output_type,
@@ -106,7 +109,10 @@ class ActionTaskPanel(ui.TaskPanel):
         return form
 
     def update(self, *_args):
-        self.pattern.setVisible(self.query.value() != QueryType.All)
+        query_type = self.query.value()
+        if query_type == QueryType.All:
+            self.pattern.setValue("")
+        self.pattern.setEnabled(query_type != QueryType.All)
         self.results.search(self.query.value(), self.pattern.value())
 
     def on_accept(self):
