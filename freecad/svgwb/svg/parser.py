@@ -360,7 +360,7 @@ def parse(filename: str | Path, preferences: SvgImportPreferences, dpi_fallback:
             hasher.update(data)
     file_hash = hasher.hexdigest()
 
-    with Path(filename).open() as f:
+    with Path(filename).open(encoding="utf-8") as f:
         parser.parse(f)
 
     return SvgParseResult(handler.root, handler.index, file_hash)
