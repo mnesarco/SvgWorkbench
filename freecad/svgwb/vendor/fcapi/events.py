@@ -305,7 +305,7 @@ class SelectionItemResult:
     doc: App.Document | None
     obj: App.DocumentObject | None = None
     sub: str | None = None
-    pnt: tuple | None = None
+    pnt: tuple[float, float, float] | None = None
 
 
 class events:
@@ -351,7 +351,7 @@ class events:
         doc: str | None = None
         obj: str | None = None
         sub: str | None = None
-        pnt: tuple | None = None
+        pnt: tuple[float, float, float] | None = None
 
         def fetch(self) -> SelectionItemResult:
             doc = App.getDocument(self.doc)
@@ -525,7 +525,7 @@ class _SelectionObserver:
     def setPreselection(self, doc: str, obj: str, sub: str):
         events.selection.set_pre.emit(events.SelectionEvent(doc, obj, sub))
 
-    def addSelection(self, doc: str, obj: str, sub: str, pnt: App.Vector):
+    def addSelection(self, doc: str, obj: str, sub: str, pnt: tuple[float, float, float]):
         events.selection.added.emit(events.SelectionEvent(doc, obj, sub, pnt))
 
     def removeSelection(self, doc: str, obj: str, sub: str):
@@ -638,5 +638,5 @@ App.addDocumentObserver(_DocumentObserver())
 def on_gui(event):
     App.Gui.Selection.addObserver(
         _SelectionObserver(),
-        App.Gui.Selection.ResolveMode.NewStyleElement,
+        # App.Gui.Selection.ResolveMode.NewStyleElement,
     )
