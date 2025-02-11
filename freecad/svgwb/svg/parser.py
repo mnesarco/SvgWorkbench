@@ -57,6 +57,7 @@ class SvgContentHandler(sax.ContentHandler):
         self.root: SvgGroup = None
         self.index = SvgIndex()
         self.muted = []
+        self.discretization = preferences.edge_approx_points()
 
     def get_id_and_label(self, tag: str, attrs: Attrs) -> tuple[str, str]:
         if not (id := attrs.get("id")):
@@ -197,7 +198,7 @@ class SvgContentHandler(sax.ContentHandler):
 
     def startPath(self, tag: str, attrs: Attrs):
         id, label, transform, style, options = self.get_common(tag, attrs)
-        path = SvgPath(tag, id, label, transform, style, options, attrs.get("d"))
+        path = SvgPath(tag, id, label, transform, style, options, attrs.get("d"), self.discretization)
         self.push(StackFrame(path, options, style, transform))
 
     def startText(self, tag: str, attrs: Attrs):

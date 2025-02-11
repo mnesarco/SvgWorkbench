@@ -32,7 +32,7 @@ class ShapeOutput(Enum):
     Edges = "Edges"
     Wires = "Wires"
     Faces = "Faces"
-    CenterOfGravity = "Center of gravity"
+    CenterOfGravity = "Center of mass"
     CenterOfBoundingBox = "Center of bounding box"
     BoundingBox = "Bounding box"
     Sketch = "Sketch"

@@ -13,6 +13,7 @@ from FreeCAD import Vector  # type: ignore
 from Part import (  # type: ignore
     Arc,
     BezierCurve,
+    BSplineCurve,
     Ellipse,
     Face,
     LineSegment,
@@ -48,11 +49,12 @@ class PathBreak(Exception):
 
 
 class SvgSubPath:
-    def __init__(self):
+    def __init__(self, discretization: int):
         self.path = []
         self.last_v = None
         self.first_v = None
         self.last_pole = None
+        self.discretization = discretization
 
     def add_line(self, d: str, args: list[float], relative: bool):
         path = self.path
@@ -257,7 +259,7 @@ class SvgSubPath:
                     # print("cubic bezier segment")
                     b = BezierCurve()
                     b.setPoles([self.last_v, pole1, pole2, current_v])
-                    seg = b.toShape()
+                    seg = approx_bspline(b, self.discretization).toShape()
                 # print("connect ", last_v, current_v)
                 self.last_v = current_v
                 path.append(seg)
@@ -308,7 +310,7 @@ class SvgSubPath:
                 else:
                     b = BezierCurve()
                     b.setPoles([self.last_v, pole, current_v])
-                    seg = b.toShape()
+                    seg = approx_bspline(b, self.discretization).toShape()
                 self.last_v = current_v
                 path.append(seg)
                 self.last_pole = ("quadratic", pole)
@@ -355,9 +357,11 @@ class SvgSubPath:
 
         raise PathBreak(self.last_v, True)
 
+
 @dataclass
 class SvgPath(SvgShape):
     d: str
+    discretization: int
 
     @cached_copy
     def to_shape(self) -> Shape | None:
@@ -372,14 +376,14 @@ class SvgPath(SvgShape):
         path = None
         while True:
             if path is None:
-                path = SvgSubPath()
+                path = SvgSubPath(self.discretization)
                 paths.append(path)
             try:
                 path.start(commands)
             except PathBreak as ex:
                 if ex.end:
                     break
-                path = SvgSubPath()
+                path = SvgSubPath(self.discretization)
                 paths.append(path)
 
         shapes = []
@@ -394,3 +398,20 @@ class SvgPath(SvgShape):
                 shapes.append(sh)
 
         return shapes
+
+
+def approx_bspline(
+    curve: BezierCurve,
+    num: int = 10,
+    tol: float = 1e-7,
+) -> BSplineCurve | BezierCurve:
+    _p0, d0 = curve.getD1(curve.FirstParameter)
+    _p1, d1 = curve.getD1(curve.LastParameter)
+    if (d0.Length < tol) or (d1.Length < tol):
+        tan1 = curve.tangent(curve.FirstParameter)[0]
+        tan2 = curve.tangent(curve.LastParameter)[0]
+        pts = curve.discretize(num)
+        bs = BSplineCurve()
+        bs.interpolate(Points=pts, InitialTangent=tan1, FinalTangent=tan2)
+        return bs
+    return curve

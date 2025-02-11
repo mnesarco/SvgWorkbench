@@ -79,6 +79,16 @@ class SvgImportPreferences(Preferences):
         ui_validators=[valid.min(6)],
     )
 
+    edge_approx_points = Preference(
+        group,
+        name="edge_approx_points",
+        default=10,
+        label=dtr("SvgWB", "Discretization points"),
+        description=dtr("SvgWB", "Number of discretization points for approximated edges"),
+        ui_section=dtr("SvgWB", "Geometry"),
+        ui_validators=[valid.min(10), valid.max(100)],
+    )
+
 
 @auto_gui(
     default_ui_group="Svg",
