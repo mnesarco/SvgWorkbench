@@ -537,7 +537,7 @@ class _SelectionObserver:
     def clearSelection(self, doc: str):
         events.selection.clear.emit(events.SelectionEvent(doc))
 
-    def pickedListChanged(self):
+    def pickedListChanged(self, *_args):
         events.selection.picked_list_changed.emit(events.SelectionEvent())
 
     def removePreselection(self, doc: str, obj: str, sub: str):
