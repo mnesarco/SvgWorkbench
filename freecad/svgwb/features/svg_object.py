@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeAlias, Callable
 
 import FreeCAD as App  # type: ignore
 
@@ -12,6 +12,9 @@ if TYPE_CHECKING:
     from FreeCAD import Document, DocumentObject  # type: ignore
     from Part import Shape  # type: ignore
     import FreeCADGui as Gui  # type: ignore
+    from ..svg.database import SvgEntity
+    ShapeTransformer: TypeAlias = Callable[[Shape], Shape]
+
 
 
 def is_sketch_like(obj: DocumentObject) -> bool:
@@ -109,7 +112,7 @@ class SvgSketchFeature(SvgObjectFeature):
 
         obj = doc.getObject(self.name)
 
-        if not is_sketch_like(obj):
+        if obj and not is_sketch_like(obj):
             doc.removeObject(obj.Name)
             obj = None
 
@@ -207,3 +210,32 @@ class SvgPlaneFeature(SvgObjectFeature):
         vo.ShapeAppearance = appearance
         vo.LineColor = (255, 102, 0, 100)
         vo.Transparency = 85
+
+
+
+
+@dataclass
+class FeatureBuilder:
+    feature: type[SvgObjectFeature]
+    transform: ShapeTransformer
+    options: dict[str, Any] | None = None
+
+    def __call__(
+        self,
+        entity: SvgEntity,
+        name: str,
+        parent: DocumentObject,
+    ) -> DocumentObject | None:
+        shape = self.transform(entity.shape)
+        if shape and not shape.isNull() and shape.BoundBox.isValid():
+            feature = self.feature(
+                name,
+                entity.id,
+                entity.tag,
+                entity.label,
+                entity.path,
+                entity.href,
+                shape,
+                self.options,
+            )
+            return feature.add_to_document(parent.Document, parent)

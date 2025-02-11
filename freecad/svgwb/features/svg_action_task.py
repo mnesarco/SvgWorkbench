@@ -63,7 +63,7 @@ OutputTypeDict = {
     "Edges": ShapeOutput.Edges,
     "Wires": ShapeOutput.Wires,
     "Faces": ShapeOutput.Faces,
-    "Center of mass": ShapeOutput.CenterOfMass,
+    "Center of gravity": ShapeOutput.CenterOfGravity,
     "Center of bounding box": ShapeOutput.CenterOfBoundingBox,
     "Bounding box": ShapeOutput.BoundingBox,
     "Sketch": ShapeOutput.Sketch,
