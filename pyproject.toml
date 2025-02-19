@@ -39,7 +39,7 @@ indent-width = 4
 
 [tool.ruff.lint]
 select = ["ALL"]
-ignore = ["D212", "PGH003", "ANN401", "ANN002", "ANN003", "D103", "UP038", "I001"]
+ignore = ["D212", "PGH003", "ANN401", "ANN002", "ANN003", "D103", "UP038", "I001", "SIM108"]
 
 [tool.ruff.lint.flake8-annotations]
 suppress-dummy-args = true

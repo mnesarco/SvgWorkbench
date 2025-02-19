@@ -49,14 +49,16 @@ class PathBreak(Exception):
 
 
 class SvgSubPath:
-    def __init__(self, discretization: int):
+    """Disconnected subpath."""
+
+    def __init__(self, discretization: int) -> None:
         self.path = []
         self.last_v = None
         self.first_v = None
         self.last_pole = None
         self.discretization = discretization
 
-    def add_line(self, d: str, args: list[float], relative: bool):
+    def add_line(self, d: str, args: list[float], *, relative: bool) -> None:
         path = self.path
         if d in "Mm":
             x = args.pop(0)
@@ -66,7 +68,6 @@ class SvgSubPath:
             else:
                 self.last_v = Vector(x, -y, 0)
             self.first_v = self.last_v
-            self.last_pole = None
 
         for x, y in zip(args[0::2], args[1::2]):
             if relative:
@@ -76,9 +77,10 @@ class SvgSubPath:
 
             if not equals(self.last_v, current_v):
                 seg = LineSegment(self.last_v, current_v).toShape()
-                self.last_v = current_v
                 path.append(seg)
-                self.last_pole = None
+            self.last_v = current_v
+
+        self.last_pole = None
 
     def add_horizontal(self, args: list[float], relative: bool):
         path = self.path
@@ -89,9 +91,9 @@ class SvgSubPath:
                 current_v = Vector(x, self.last_v.y, 0)
             if not equals(self.last_v, current_v):
                 seg = LineSegment(self.last_v, current_v).toShape()
-                self.last_v = current_v
                 path.append(seg)
-                self.last_pole = None
+            self.last_v = current_v
+            self.last_pole = None
 
     def add_vertical(self, args: list[float], relative: bool):
         path = self.path
@@ -102,9 +104,9 @@ class SvgSubPath:
                 current_v = Vector(self.last_v.x, -y, 0)
             if not equals(self.last_v, current_v):
                 seg = LineSegment(self.last_v, current_v).toShape()
-                self.last_v = current_v
                 path.append(seg)
-                self.last_pole = None
+            self.last_v = current_v
+            self.last_pole = None
 
     def add_arc(self, args: list[float], relative: bool):
         path = self.path
@@ -261,9 +263,9 @@ class SvgSubPath:
                     b.setPoles([self.last_v, pole1, pole2, current_v])
                     seg = approx_bspline(b, self.discretization).toShape()
                 # print("connect ", last_v, current_v)
-                self.last_v = current_v
                 path.append(seg)
-                self.last_pole = ("cubic", pole2)
+            self.last_v = current_v
+            self.last_pole = ("cubic", pole2)
 
     def add_quadratic_bezier(self, args: list[float], relative: bool, smooth: bool):
         path = self.path
@@ -311,9 +313,9 @@ class SvgSubPath:
                     b = BezierCurve()
                     b.setPoles([self.last_v, pole, current_v])
                     seg = approx_bspline(b, self.discretization).toShape()
-                self.last_v = current_v
                 path.append(seg)
-                self.last_pole = ("quadratic", pole)
+            self.last_v = current_v
+            self.last_pole = ("quadratic", pole)
 
     def add_close(self):
         path = self.path
@@ -334,7 +336,7 @@ class SvgSubPath:
             smooth = d in "sStT"
 
             if d in "LlMm" and args:
-                self.add_line(d, args, relative)
+                self.add_line(d, args, relative=relative)
 
             elif d in "Hh":
                 self.add_horizontal(args, relative)
@@ -384,6 +386,8 @@ class SvgPath(SvgShape):
                 if ex.end:
                     break
                 path = SvgSubPath(self.discretization)
+                path.last_v = ex.point
+                path.first_v = ex.point
                 paths.append(path)
 
         shapes = []
