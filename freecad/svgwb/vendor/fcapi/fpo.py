@@ -39,16 +39,15 @@ import re
 import sys
 import textwrap
 import traceback
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
     Generic,
-    Hashable,
     Protocol,
     TypeAlias,
     TypeVar,
@@ -61,7 +60,7 @@ from FreeCAD import (  # type: ignore[all]
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, Iterable
+    from collections.abc import Generator, Hashable, Iterable
 
     from Part import Shape  # type: ignore[all]
 
@@ -311,22 +310,24 @@ def _resolve_uri(path: str, base_dir: Path | None = None) -> str:
 # ──────────────────────────────────────────────────────────────────────────────
 _Pct = TypeVar("_Pct")
 
-class _prop_constructor(Generic[_Pct]):  # noqa: ANN202: Allow return inferred return type
+
+class _prop_constructor(Generic[_Pct]):  # Allow return inferred return type
     """Create a constructor for a specific Property Type."""
 
-    def __init__(self, prop_type: str, py_type: type[_Pct] = str):
+    def __init__(self, prop_type: str, py_type: type[_Pct] = str) -> None:
         self.prop_type = prop_type
+        self.py_type = py_type
 
     def __call__(
-            self,
-            *,
-            name: str | None = None,
-            section: str = "Data",
-            default: _Pct | None = None,
-            description: str = "",
-            mode: PropertyMode | None = None,
-            observer_func: Callable | None = None,
-            link_property: str | bool = False,
+        self,
+        *,
+        name: str | None = None,
+        section: str = "Data",
+        default: _Pct | None = None,
+        description: str = "",
+        mode: PropertyMode | None = None,
+        observer_func: Callable | None = None,
+        link_property: str | bool = False,
     ) -> Property[_Pct]:
         return Property(
             type=self.prop_type,
@@ -338,8 +339,6 @@ class _prop_constructor(Generic[_Pct]):  # noqa: ANN202: Allow return inferred r
             description=description,
             mode=PropertyMode.Default if mode is None else mode,
         )
-
-
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -471,6 +470,8 @@ class EditMode(_DocIntEnum):
 
 ##% ────────────────────────────────────────────────────────────────────────────
 _PT = TypeVar("_PT")
+
+
 class Property(Generic[_PT]):
     """
     Proxy object to create, access and manipulate remote freecad properties.
@@ -589,10 +590,11 @@ class Property(Generic[_PT]):
         if hasattr(obj, self.name):
             obj.setPropertyStatus(self.name, status)
 
-
     if TYPE_CHECKING:
-        def __get__(self, obj, objtype=None) -> _PT: ...
-        def __set__(self, obj, value: _PT): ...
+
+        def __get__(self, obj, obj_type=None) -> _PT: ...  # noqa: ANN001, D105
+        def __set__(self, obj, value: _PT) -> None: ...  # noqa: ANN001, D105
+
 
 ##% ────────────────────────────────────────────────────────────────────────────
 class DisplayMode:
@@ -962,19 +964,24 @@ class TypeMeta:
 
 ##% ────────────────────────────────────────────────────────────────────────────
 class UIValidator(Protocol):
-    def setup(self, ui) -> None: ...
-    def validate(self, value) -> str | None: ...
+    """Validator for preferences."""
+
+    def setup(self, ui: Any) -> None: ...
+    def validate(self, value: Any) -> str | None: ...
+
 
 @dataclass
 class PreferencePreset:
+    """Preference variant under a preset name."""
+
     preference: Preference
     preset: str
 
     def __post_init__(self) -> None:  # noqa: D105
-        if '/' in self.preset:
-            self.preset = self.preset.replace('/', '-')
+        if "/" in self.preset:
+            self.preset = self.preset.replace("/", "-")
 
-    def __call__(self, *, update: Any | None = None, default: Any = None):
+    def __call__(self, *, update: Any | None = None, default: Any = None):  # noqa: ANN204
         return self.preference(update=update, default=default, preset=self.preset)
 
     def read(self, default: Any = None) -> Any:
@@ -982,6 +989,7 @@ class PreferencePreset:
 
     def write(self, value: bool | float | str | None) -> None:
         self.preference.write(value, preset=self.preset)
+
 
 @dataclass
 class Preference:
@@ -1041,7 +1049,13 @@ class Preference:
     # ─────────
     # Read/Write shortcut
     # Changed in 1.0.0-beta5: for write, update name only arg is required
-    def __call__(self, *, update: Any | None = None, preset: str | None = None, default: Any = None) -> Any:
+    def __call__(
+        self,
+        *,
+        update: Any | None = None,
+        preset: str | None = None,
+        default: Any = None,
+    ) -> Any:
         if update is None:
             value = self.read(preset=preset)
             if value is None and default:
@@ -1051,7 +1065,12 @@ class Preference:
         return None
 
     # ─────────
-    def write(self, value: bool | float | str | None, *, preset: str | None = None) -> None:  # noqa: PLR0912
+    def write(  # noqa: C901, PLR0912
+        self,
+        value: bool | float | str | None,
+        *,
+        preset: str | None = None,
+    ) -> None:
         if preset:
             group = App.ParamGet(f"{self.group_key}/presets/{preset}")
         else:
@@ -1079,11 +1098,13 @@ class Preference:
                 else:
                     group.SetString(self.name, self.value_type(value))
         except Exception:  # noqa: BLE001
-            print_err(f"Error writing preference: {group}/{self.name} {self.value_type} = {value} {type(value)}")
+            print_err(
+                f"Error writing preference: {group}/{self.name} {self.value_type} = {value} {type(value)}",  # noqa: E501
+            )
 
     # ─────────
     def preset(self, name: str) -> PreferencePreset:
-        """Returns a new Preference based on self but stored in a different preset"""
+        """Returns a new Preference based on self but stored in a different preset."""
         return PreferencePreset(self, name)
 
     # ─────────
@@ -1132,7 +1153,19 @@ class Preference:
 
 
 class Preferences:
-    def __init__(self, preset: str = "Default", copy_from: Preferences | None = None):
+    """A set of preferences under a preset name."""
+
+    def __init__(
+        self,
+        preset: str = "Default",
+        copy_from: Preferences | None = None,
+    ) -> None:
+        """
+        Create a preferences preset proxy.
+
+        :param str preset: name of the preset, defaults to "Default"
+        :param Preferences | None copy_from: optional name of an existing preset, defaults to None
+        """
         self.preset = preset
         for name, pref in self.declared_preferences():
             setattr(self, name, pref.preset(preset))
@@ -1160,7 +1193,7 @@ class Preferences:
         return value
 
     def preset_names(self) -> list[str]:
-        presets: set[str] = set(["Default"])
+        presets: set[str] = {"Default"}
         update = presets.update
         for _name, pref in self.declared_preferences():
             update(pref.preset_names())
@@ -1173,7 +1206,7 @@ class Preferences:
 
 
 ##@ ────────────────────────────────────────────────────────────────────────────
-def proxy(
+def proxy(  # noqa: ANN201
     *,
     object_type: str = "App::FeaturePython",
     subtype: str | None = None,
@@ -1195,7 +1228,7 @@ def proxy(
         object_type = f"{object_type}Python"
 
     # Actual decorator that applies all the required transformations to the class
-    def transformer(cls: type):
+    def transformer(cls: type):  # noqa: ANN202
         meta = TypeMeta(
             cls,
             object_type,
@@ -1565,7 +1598,15 @@ def t_proxy_before_change(_, meta: TypeMeta) -> GeneratedMethod:
             old_value = getattr(obj, prop_name, None)
             self.__so_old__[prop_name] = old_value
             if handler:
-                handler(self, events.PropertyWillChangeEvent(obj, prop_name, old_value, getattr(obj, "ViewObject", None)))
+                handler(
+                    self,
+                    events.PropertyWillChangeEvent(
+                        obj,
+                        prop_name,
+                        old_value,
+                        getattr(obj, "ViewObject", None),
+                    ),
+                )
 
     return onBeforeChange
 
@@ -1580,7 +1621,13 @@ def t_proxy_change(_, meta: TypeMeta) -> GeneratedMethod:
             if new_value != old_value:
                 meta.apply_extensions(self, obj, _ON_CHANGE, prop_name)
                 prop = meta.property_lookup.get(prop_name, None)
-                event = events.PropertyChangedEvent(obj, prop_name, old_value, new_value, getattr(obj, "ViewObject", None))
+                event = events.PropertyChangedEvent(
+                    obj,
+                    prop_name,
+                    old_value,
+                    new_value,
+                    getattr(obj, "ViewObject", None),
+                )
                 if prop and prop.observer_func:
                     args = (self, event)[0 : prop.observer_arity]
                     prop.observer_func(*args)
@@ -1733,7 +1780,8 @@ def t_proxy_view_provider_name_override(_, meta: TypeMeta) -> GeneratedMethod:
 ##$ ────────────────────────────────────────────────────────────────────────────
 @template(name="__init__", allow_override=True)
 def t_view_proxy_constructor(overridden: Any, _: TypeMeta) -> GeneratedMethod:
-    """Create the constructor for the ViewProxy.
+    """
+    Create the constructor for the ViewProxy.
 
     Calls the user defined constructor if any.
     If there is a user defined __init__, it must
@@ -2218,130 +2266,159 @@ ExtensionSupport("PartGui::ViewProviderSplineExtensionPython")
 ##: Generated from <FreeCAD_sources>/src/App/Application.cpp
 ##: Supported Property types
 ##: ────────────────────────────────────────────────────────────────────────────
-PropertyAcceleration = _prop_constructor("App::PropertyAcceleration")
-PropertyAmountOfSubstance = _prop_constructor("App::PropertyAmountOfSubstance")
-PropertyAngle = _prop_constructor("App::PropertyAngle")
-PropertyArea = _prop_constructor("App::PropertyArea")
+PropertyAcceleration = _prop_constructor("App::PropertyAcceleration", float)
+PropertyAmountOfSubstance = _prop_constructor("App::PropertyAmountOfSubstance", float)
+PropertyAngle = _prop_constructor("App::PropertyAngle", float)
+PropertyArea = _prop_constructor("App::PropertyArea", float)
 PropertyBool = _prop_constructor("App::PropertyBool", bool)
-PropertyBoolList = _prop_constructor("App::PropertyBoolList")
-PropertyColor = _prop_constructor("App::PropertyColor")
-PropertyColorList = _prop_constructor("App::PropertyColorList")
-PropertyComplexGeoData = _prop_constructor("App::PropertyComplexGeoData")
-PropertyCompressiveStrength = _prop_constructor("App::PropertyCompressiveStrength")
-PropertyCurrentDensity = _prop_constructor("App::PropertyCurrentDensity")
-PropertyDensity = _prop_constructor("App::PropertyDensity")
-PropertyDirection = _prop_constructor("App::PropertyDirection")
-PropertyDissipationRate = _prop_constructor("App::PropertyDissipationRate")
-PropertyDistance = _prop_constructor("App::PropertyDistance")
-PropertyDynamicViscosity = _prop_constructor("App::PropertyDynamicViscosity")
-PropertyElectricCharge = _prop_constructor("App::PropertyElectricCharge")
-PropertyElectricCurrent = _prop_constructor("App::PropertyElectricCurrent")
-PropertyElectricPotential = _prop_constructor("App::PropertyElectricPotential")
-PropertyElectricalCapacitance = _prop_constructor("App::PropertyElectricalCapacitance")
-PropertyElectricalConductance = _prop_constructor("App::PropertyElectricalConductance")
-PropertyElectricalConductivity = _prop_constructor("App::PropertyElectricalConductivity")
-PropertyElectricalInductance = _prop_constructor("App::PropertyElectricalInductance")
-PropertyElectricalResistance = _prop_constructor("App::PropertyElectricalResistance")
-PropertyExpressionEngine = _prop_constructor("App::PropertyExpressionEngine")
-PropertyFile = _prop_constructor("App::PropertyFile")
-PropertyFileIncluded = _prop_constructor("App::PropertyFileIncluded")
+PropertyBoolList = _prop_constructor("App::PropertyBoolList", list[bool])
+PropertyColor = _prop_constructor("App::PropertyColor", tuple[float, float, float])
+PropertyColorList = _prop_constructor("App::PropertyColorList", list[tuple[float, float, float]])
+PropertyComplexGeoData = _prop_constructor("App::PropertyComplexGeoData", object)
+PropertyCompressiveStrength = _prop_constructor("App::PropertyCompressiveStrength", float)
+PropertyCurrentDensity = _prop_constructor("App::PropertyCurrentDensity", float)
+PropertyDensity = _prop_constructor("App::PropertyDensity", float)
+PropertyDirection = _prop_constructor("App::PropertyDirection", App.Vector)
+PropertyDissipationRate = _prop_constructor("App::PropertyDissipationRate", float)
+PropertyDistance = _prop_constructor("App::PropertyDistance", float)
+PropertyDynamicViscosity = _prop_constructor("App::PropertyDynamicViscosity", float)
+PropertyElectricCharge = _prop_constructor("App::PropertyElectricCharge", float)
+PropertyElectricCurrent = _prop_constructor("App::PropertyElectricCurrent", float)
+PropertyElectricPotential = _prop_constructor("App::PropertyElectricPotential", float)
+PropertyElectricalCapacitance = _prop_constructor("App::PropertyElectricalCapacitance", float)
+PropertyElectricalConductance = _prop_constructor("App::PropertyElectricalConductance", float)
+PropertyElectricalConductivity = _prop_constructor("App::PropertyElectricalConductivity", float)
+PropertyElectricalInductance = _prop_constructor("App::PropertyElectricalInductance", float)
+PropertyElectricalResistance = _prop_constructor("App::PropertyElectricalResistance", float)
+PropertyExpressionEngine = _prop_constructor("App::PropertyExpressionEngine", list[tuple[str, str]])
+PropertyFile = _prop_constructor("App::PropertyFile", str)
+PropertyFileIncluded = _prop_constructor("App::PropertyFileIncluded", str)
 PropertyFloat = _prop_constructor("App::PropertyFloat", float)
 PropertyFloatConstraint = _prop_constructor("App::PropertyFloatConstraint", float)
 PropertyFloatList = _prop_constructor("App::PropertyFloatList", list[float])
-PropertyFont = _prop_constructor("App::PropertyFont")
-PropertyForce = _prop_constructor("App::PropertyForce")
-PropertyFrequency = _prop_constructor("App::PropertyFrequency")
-PropertyGeometry = _prop_constructor("App::PropertyGeometry")
-PropertyHeatFlux = _prop_constructor("App::PropertyHeatFlux")
+PropertyFont = _prop_constructor("App::PropertyFont", object)
+PropertyForce = _prop_constructor("App::PropertyForce", float)
+PropertyFrequency = _prop_constructor("App::PropertyFrequency", float)
+PropertyGeometry = _prop_constructor("App::PropertyGeometry", object)
+PropertyHeatFlux = _prop_constructor("App::PropertyHeatFlux", float)
 PropertyInteger = _prop_constructor("App::PropertyInteger", int)
 PropertyIntegerConstraint = _prop_constructor("App::PropertyIntegerConstraint", int)
 PropertyIntegerList = _prop_constructor("App::PropertyIntegerList", list[int])
-PropertyIntegerSet = _prop_constructor("App::PropertyIntegerSet")
-PropertyInverseArea = _prop_constructor("App::PropertyInverseArea")
-PropertyInverseLength = _prop_constructor("App::PropertyInverseLength")
-PropertyInverseVolume = _prop_constructor("App::PropertyInverseVolume")
-PropertyKinematicViscosity = _prop_constructor("App::PropertyKinematicViscosity")
-PropertyLength = _prop_constructor("App::PropertyLength")
+PropertyIntegerSet = _prop_constructor("App::PropertyIntegerSet", set[int])
+PropertyInverseArea = _prop_constructor("App::PropertyInverseArea", float)
+PropertyInverseLength = _prop_constructor("App::PropertyInverseLength", float)
+PropertyInverseVolume = _prop_constructor("App::PropertyInverseVolume", float)
+PropertyKinematicViscosity = _prop_constructor("App::PropertyKinematicViscosity", float)
+PropertyLength = _prop_constructor("App::PropertyLength", float)
 PropertyLink = _prop_constructor("App::PropertyLink", DocumentObject)
-PropertyLinkChild = _prop_constructor("App::PropertyLinkChild")
-PropertyLinkGlobal = _prop_constructor("App::PropertyLinkGlobal")
-PropertyLinkHidden = _prop_constructor("App::PropertyLinkHidden")
-PropertyLinkList = _prop_constructor("App::PropertyLinkList")
-PropertyLinkListChild = _prop_constructor("App::PropertyLinkListChild")
-PropertyLinkListGlobal = _prop_constructor("App::PropertyLinkListGlobal")
-PropertyLinkListHidden = _prop_constructor("App::PropertyLinkListHidden")
-PropertyLinkSub = _prop_constructor("App::PropertyLinkSub")
-PropertyLinkSubChild = _prop_constructor("App::PropertyLinkSubChild")
-PropertyLinkSubGlobal = _prop_constructor("App::PropertyLinkSubGlobal")
-PropertyLinkSubHidden = _prop_constructor("App::PropertyLinkSubHidden")
-PropertyLinkSubList = _prop_constructor("App::PropertyLinkSubList")
-PropertyLinkSubListChild = _prop_constructor("App::PropertyLinkSubListChild")
-PropertyLinkSubListGlobal = _prop_constructor("App::PropertyLinkSubListGlobal")
-PropertyLinkSubListHidden = _prop_constructor("App::PropertyLinkSubListHidden")
-PropertyLuminousIntensity = _prop_constructor("App::PropertyLuminousIntensity")
-PropertyMagneticFieldStrength = _prop_constructor("App::PropertyMagneticFieldStrength")
-PropertyMagneticFlux = _prop_constructor("App::PropertyMagneticFlux")
-PropertyMagneticFluxDensity = _prop_constructor("App::PropertyMagneticFluxDensity")
-PropertyMagnetization = _prop_constructor("App::PropertyMagnetization")
-PropertyMap = _prop_constructor("App::PropertyMap")
-PropertyMass = _prop_constructor("App::PropertyMass")
-PropertyMaterial = _prop_constructor("App::PropertyMaterial")
-PropertyMaterialList = _prop_constructor("App::PropertyMaterialList")
-PropertyMatrix = _prop_constructor("App::PropertyMatrix")
-PropertyMoment = _prop_constructor("App::PropertyMoment")
-PropertyPath = _prop_constructor("App::PropertyPath")
-PropertyPercent = _prop_constructor("App::PropertyPercent")
-PropertyPersistentObject = _prop_constructor("App::PropertyPersistentObject")
+PropertyLinkChild = _prop_constructor("App::PropertyLinkChild", DocumentObject)
+PropertyLinkGlobal = _prop_constructor("App::PropertyLinkGlobal", DocumentObject)
+PropertyLinkHidden = _prop_constructor("App::PropertyLinkHidden", DocumentObject)
+PropertyLinkList = _prop_constructor("App::PropertyLinkList", list[DocumentObject])
+PropertyLinkListChild = _prop_constructor("App::PropertyLinkListChild", list[DocumentObject])
+PropertyLinkListGlobal = _prop_constructor("App::PropertyLinkListGlobal", list[DocumentObject])
+PropertyLinkListHidden = _prop_constructor("App::PropertyLinkListHidden", list[DocumentObject])
+PropertyLinkSub = _prop_constructor("App::PropertyLinkSub", tuple[DocumentObject, list[str]])
+PropertyLinkSubChild = _prop_constructor(
+    "App::PropertyLinkSubChild",
+    tuple[DocumentObject, list[str]],
+)
+PropertyLinkSubGlobal = _prop_constructor(
+    "App::PropertyLinkSubGlobal",
+    tuple[DocumentObject, list[str]],
+)
+PropertyLinkSubHidden = _prop_constructor(
+    "App::PropertyLinkSubHidden",
+    tuple[DocumentObject, list[str]],
+)
+PropertyLinkSubList = _prop_constructor(
+    "App::PropertyLinkSubList",
+    list[tuple[DocumentObject, list[str]]],
+)
+PropertyLinkSubListChild = _prop_constructor(
+    "App::PropertyLinkSubListChild",
+    list[tuple[DocumentObject, list[str]]],
+)
+PropertyLinkSubListGlobal = _prop_constructor(
+    "App::PropertyLinkSubListGlobal",
+    list[tuple[DocumentObject, list[str]]],
+)
+PropertyLinkSubListHidden = _prop_constructor(
+    "App::PropertyLinkSubListHidden",
+    list[tuple[DocumentObject, list[str]]],
+)
+PropertyLuminousIntensity = _prop_constructor("App::PropertyLuminousIntensity", float)
+PropertyMagneticFieldStrength = _prop_constructor("App::PropertyMagneticFieldStrength", float)
+PropertyMagneticFlux = _prop_constructor("App::PropertyMagneticFlux", float)
+PropertyMagneticFluxDensity = _prop_constructor("App::PropertyMagneticFluxDensity", float)
+PropertyMagnetization = _prop_constructor("App::PropertyMagnetization", float)
+PropertyMap = _prop_constructor("App::PropertyMap", dict)
+PropertyMass = _prop_constructor("App::PropertyMass", float)
+PropertyMaterial = _prop_constructor("App::PropertyMaterial", object)
+PropertyMaterialList = _prop_constructor("App::PropertyMaterialList", list[object])
+PropertyMatrix = _prop_constructor("App::PropertyMatrix", App.Matrix)
+PropertyMoment = _prop_constructor("App::PropertyMoment", float)
+PropertyPath = _prop_constructor("App::PropertyPath", str)
+PropertyPercent = _prop_constructor("App::PropertyPercent", float)
+PropertyPersistentObject = _prop_constructor("App::PropertyPersistentObject", object)
 PropertyPlacement = _prop_constructor("App::PropertyPlacement", App.Placement)
-PropertyPlacementLink = _prop_constructor("App::PropertyPlacementLink")
-PropertyPlacementList = _prop_constructor("App::PropertyPlacementList")
-PropertyPosition = _prop_constructor("App::PropertyPosition")
-PropertyPower = _prop_constructor("App::PropertyPower")
-PropertyPrecision = _prop_constructor("App::PropertyPrecision")
-PropertyPressure = _prop_constructor("App::PropertyPressure")
-PropertyPythonObject = _prop_constructor("App::PropertyPythonObject")
-PropertyQuantity = _prop_constructor("App::PropertyQuantity")
-PropertyQuantityConstraint = _prop_constructor("App::PropertyQuantityConstraint")
-PropertyRotation = _prop_constructor("App::PropertyRotation")
-PropertyShearModulus = _prop_constructor("App::PropertyShearModulus")
-PropertySpecificEnergy = _prop_constructor("App::PropertySpecificEnergy")
-PropertySpecificHeat = _prop_constructor("App::PropertySpecificHeat")
-PropertySpeed = _prop_constructor("App::PropertySpeed")
-PropertyStiffness = _prop_constructor("App::PropertyStiffness")
-PropertyStiffnessDensity = _prop_constructor("App::PropertyStiffnessDensity")
-PropertyStress = _prop_constructor("App::PropertyStress")
-PropertyString = _prop_constructor("App::PropertyString")
+PropertyPlacementLink = _prop_constructor("App::PropertyPlacementLink", App.Placement)
+PropertyPlacementList = _prop_constructor("App::PropertyPlacementList", list[App.Placement])
+PropertyPosition = _prop_constructor("App::PropertyPosition", App.Vector)
+PropertyPower = _prop_constructor("App::PropertyPower", float)
+PropertyPrecision = _prop_constructor("App::PropertyPrecision", float)
+PropertyPressure = _prop_constructor("App::PropertyPressure", float)
+PropertyPythonObject = _prop_constructor("App::PropertyPythonObject", object)
+PropertyQuantity = _prop_constructor("App::PropertyQuantity", float)
+PropertyQuantityConstraint = _prop_constructor("App::PropertyQuantityConstraint", float)
+PropertyRotation = _prop_constructor("App::PropertyRotation", App.Rotation)
+PropertyShearModulus = _prop_constructor("App::PropertyShearModulus", float)
+PropertySpecificEnergy = _prop_constructor("App::PropertySpecificEnergy", float)
+PropertySpecificHeat = _prop_constructor("App::PropertySpecificHeat", float)
+PropertySpeed = _prop_constructor("App::PropertySpeed", float)
+PropertyStiffness = _prop_constructor("App::PropertyStiffness", float)
+PropertyStiffnessDensity = _prop_constructor("App::PropertyStiffnessDensity", float)
+PropertyStress = _prop_constructor("App::PropertyStress", float)
+PropertyString = _prop_constructor("App::PropertyString", str)
 PropertyStringList = _prop_constructor("App::PropertyStringList", list[str])
-PropertyTemperature = _prop_constructor("App::PropertyTemperature")
-PropertyThermalConductivity = _prop_constructor("App::PropertyThermalConductivity")
-PropertyThermalExpansionCoefficient = _prop_constructor("App::PropertyThermalExpansionCoefficient")
-PropertyThermalTransferCoefficient = _prop_constructor("App::PropertyThermalTransferCoefficient")
-PropertyTime = _prop_constructor("App::PropertyTime")
-PropertyUUID = _prop_constructor("App::PropertyUUID")
-PropertyUltimateTensileStrength = _prop_constructor("App::PropertyUltimateTensileStrength")
-PropertyVacuumPermittivity = _prop_constructor("App::PropertyVacuumPermittivity")
+PropertyTemperature = _prop_constructor("App::PropertyTemperature", float)
+PropertyThermalConductivity = _prop_constructor("App::PropertyThermalConductivity", float)
+PropertyThermalExpansionCoefficient = _prop_constructor(
+    "App::PropertyThermalExpansionCoefficient",
+    float,
+)
+PropertyThermalTransferCoefficient = _prop_constructor(
+    "App::PropertyThermalTransferCoefficient",
+    float,
+)
+PropertyTime = _prop_constructor("App::PropertyTime", float)
+PropertyUUID = _prop_constructor("App::PropertyUUID", str)
+PropertyUltimateTensileStrength = _prop_constructor("App::PropertyUltimateTensileStrength", float)
+PropertyVacuumPermittivity = _prop_constructor("App::PropertyVacuumPermittivity", float)
 PropertyVector = _prop_constructor("App::PropertyVector", App.Vector)
-PropertyVectorDistance = _prop_constructor("App::PropertyVectorDistance")
+PropertyVectorDistance = _prop_constructor("App::PropertyVectorDistance", float)
 PropertyVectorList = _prop_constructor("App::PropertyVectorList", list[App.Vector])
-PropertyVelocity = _prop_constructor("App::PropertyVelocity")
-PropertyVolume = _prop_constructor("App::PropertyVolume")
-PropertyVolumeFlowRate = _prop_constructor("App::PropertyVolumeFlowRate")
+PropertyVelocity = _prop_constructor("App::PropertyVelocity", float)
+PropertyVolume = _prop_constructor("App::PropertyVolume", float)
+PropertyVolumeFlowRate = _prop_constructor("App::PropertyVolumeFlowRate", float)
 PropertyVolumetricThermalExpansionCoefficient = _prop_constructor(
     "App::PropertyVolumetricThermalExpansionCoefficient",
+    float,
 )
-PropertyWork = _prop_constructor("App::PropertyWork")
-PropertyXLink = _prop_constructor("App::PropertyXLink")
-PropertyXLinkList = _prop_constructor("App::PropertyXLinkList")
-PropertyXLinkSub = _prop_constructor("App::PropertyXLinkSub")
-PropertyXLinkSubHidden = _prop_constructor("App::PropertyXLinkSubHidden")
-PropertyXLinkSubList = _prop_constructor("App::PropertyXLinkSubList")
-PropertyYieldStrength = _prop_constructor("App::PropertyYieldStrength")
-PropertyYoungsModulus = _prop_constructor("App::PropertyYoungsModulus")
+PropertyWork = _prop_constructor("App::PropertyWork", float)
+PropertyXLink = _prop_constructor("App::PropertyXLink", DocumentObject)
+PropertyXLinkList = _prop_constructor("App::PropertyXLinkList", DocumentObject)
+PropertyXLinkSub = _prop_constructor("App::PropertyXLinkSub", DocumentObject)
+PropertyXLinkSubHidden = _prop_constructor("App::PropertyXLinkSubHidden", DocumentObject)
+PropertyXLinkSubList = _prop_constructor("App::PropertyXLinkSubList", list[DocumentObject])
+PropertyYieldStrength = _prop_constructor("App::PropertyYieldStrength", float)
+PropertyYoungsModulus = _prop_constructor("App::PropertyYoungsModulus", float)
 
 
 ##: Special constructor for Enumeration property type
 ##: ────────────────────────────────────────────────────────────────────────────
 _ET = TypeVar("_ET")
+
 
 def PropertyEnumeration(
     enum: type[_ET],
@@ -2649,6 +2726,7 @@ def transaction(name: str, doc: Document = None) -> Generator[TransactionCtrl, A
 ##: Typing For documentation purposes
 ##: ────────────────────────────────────────────────────────────────────────────
 if TYPE_CHECKING:
+
     class DataProxy(Protocol):
         """
         Documentation only protocol to illustrate the method signatures.
@@ -2686,8 +2764,7 @@ if TYPE_CHECKING:
             name: str | None = None,
             label: str | None = None,
             doc: Document | None = None,
-        ) -> DocumentObject:...
-
+        ) -> DocumentObject: ...
 
     class ViewProxy(Protocol):
         """
@@ -2732,8 +2809,10 @@ if TYPE_CHECKING:
 
 
 if not TYPE_CHECKING:
-    class DataProxy: ...
-    class ViewProxy: ...
+
+    class DataProxy: ...  # noqa: D101
+
+    class ViewProxy: ...  # noqa: D101
 
 
 Proxy: TypeAlias = DataProxy | ViewProxy
