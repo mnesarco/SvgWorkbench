@@ -24,6 +24,16 @@ class SvgImportPreferences(Preferences):
         ui_section=dtr("SvgWB", "Geometry"),
     )
 
+    precision = Preference(
+        group,
+        name="precision",
+        default=3,
+        label=dtr("SvgWB", "Coordinate Precision"),
+        description=dtr("SvgWB", "Unit: digits behind comma. Important for closed wire detection and tiny edge filtering."),
+        ui_section=dtr("SvgWB", "Geometry"),
+        ui_validators=[valid.min(0), valid.max(6)],
+    )
+
     style_import_mode = Preference(
         group,
         name="style_import_mode",
