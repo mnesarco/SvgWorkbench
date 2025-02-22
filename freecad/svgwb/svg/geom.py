@@ -10,10 +10,46 @@ from Draft import precision as draft_precision  # type: ignore
 from Part import OCCError, Wire, Edge, Compound  # type: ignore
 from Part import __sortEdges__ as sort_edges  # type: ignore
 
-Precision = draft_precision()
+# draft precision for calculations
+DraftPrecision = draft_precision()
 
-def precision(offset: int = 0):
-    return 10 ** (-(Precision - offset))
+# svg import precision for comparing coordinates / closing wires.
+SVGPrecision = 0
+
+
+def set_svg_precision(precision: int):
+    """
+    Set the SVG precision used by geom helper functions regarding
+    closing wires and comparing coordinates.
+     
+    Parameters
+    ----------
+    precision : int
+                relevant digits behind comma
+    """
+    global SVGPrecision
+    
+    SVGPrecision = precision
+
+
+
+def precision_step(precision: int = DraftPrecision):
+    """
+    Return the smallest possible fraction or step size for a given precision.
+    Since precision is defined as 'relevant decimal digits behind the comma' 
+    the outcome for eg. precision = 3 is 0,001.
+     
+    Parameters
+    ----------
+    precision : int
+                relevant digits behind comma
+    Returns
+    -------
+    float
+        smallest possible fraction or step for the given precision.
+
+    """
+    return 10 ** (-precision)
 
 def arc_end_to_center(
     last_v: Vector,
@@ -83,7 +119,7 @@ def arc_end_to_center(
 
     # If the division is very small, set the scaling factor to zero,
     # otherwise try to calculate it by taking the square root
-    if abs(numer / denom) < precision():
+    if abs(numer / denom) < precision_step(DraftPrecision):
         scale_fact_pos = 0
     else:
         try:
@@ -165,7 +201,7 @@ def make_wire(
         # Code from wmayer forum p15549 to fix the tolerance problem
         # original tolerance = 0.00001
         comp = Compound(path)
-        _sh = comp.connectEdgesToWires(False, precision(2))
+        _sh = comp.connectEdgesToWires(False, precision_step(SVGPrecision))
         sh = _sh.Wires[0]
         if len(sh.Edges) != len(path):
             sh = comp

@@ -25,6 +25,7 @@ from .polyline import SvgPolyLine
 from .ellipse import SvgEllipse
 from .circle import SvgCircle
 from .dimension import SvgDimension
+from .geom import set_svg_precision as setSVGPrecision
 from . import parsers
 
 from FreeCAD import Matrix  # type: ignore
@@ -54,6 +55,7 @@ class SvgContentHandler(sax.ContentHandler):
             font_size=preferences.font_size(),
         )
         self.disable_unit_scaling = preferences.disable_unit_scaling()
+        setSVGPrecision(preferences.precision())
         self.root: SvgGroup = None
         self.index = SvgIndex()
         self.muted = []

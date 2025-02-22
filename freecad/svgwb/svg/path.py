@@ -23,7 +23,7 @@ from Part import (  # type: ignore
 from Part import makeCompound as make_compound  # type: ignore
 
 from .cache import cached_copy, cached_copy_list
-from .geom import Precision, arc_end_to_center, make_wire, precision
+from .geom import DraftPrecision, precision_step, arc_end_to_center, make_wire
 from .parsers import parse_floats
 from .shape import SvgShape
 
@@ -127,7 +127,7 @@ class SvgSubPath:
                 current_v = Vector(x, -y, 0)
             chord = current_v.sub(self.last_v)
             # small circular arc
-            _precision = precision()
+            _precision = precision_step(DraftPrecision)
             if (not large_flag) and abs(rx - ry) < _precision:
                 # perp = chord.cross(Vector(0, 0, -1))
                 # here is a better way to find the perpendicular
@@ -185,7 +185,7 @@ class SvgSubPath:
                 seg = e1a.toShape()
                 if swap_axis:
                     seg.rotate(v_center, Vector(0, 0, 1), 90)
-                _precision = precision()
+                _precision = precision_step(DraftPrecision)
                 if abs(x_rotation) > _precision:
                     seg.rotate(v_center, Vector(0, 0, 1), -x_rotation)
                 if sweep_flag:
@@ -250,7 +250,7 @@ class SvgSubPath:
                 #       mainv.normalize(),
                 #       pole1v.normalize(),
                 #       pole2v.normalize())
-                _precision = precision(-2)
+                _precision = precision_step(DraftPrecision + 2)
                 _d1 = pole1.distanceToLine(self.last_v, current_v)
                 _d2 = pole2.distanceToLine(self.last_v, current_v)
                 if True and _d1 < _precision and _d2 < _precision:
@@ -304,7 +304,7 @@ class SvgSubPath:
                 current_v = Vector(x, -y, 0)
 
             if not equals(current_v, self.last_v):
-                _precision = 20 ** (-1 * (2 + Precision))
+                _precision = 20 ** (-1 * (2 + DraftPrecision))
                 _distance = pole.distanceToLine(self.last_v, current_v)
                 if _distance < _precision:
                     _seg = LineSegment(self.last_v, current_v)
