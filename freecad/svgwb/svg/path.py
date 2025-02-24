@@ -8,7 +8,7 @@ import re
 from dataclasses import dataclass
 from typing import Iterator
 
-from DraftVecUtils import equals, rotate2D  # type: ignore
+from DraftVecUtils import rotate2D  # type: ignore
 from FreeCAD import Vector  # type: ignore
 from Part import (  # type: ignore
     Arc,
@@ -23,7 +23,7 @@ from Part import (  # type: ignore
 from Part import makeCompound as make_compound  # type: ignore
 
 from .cache import cached_copy, cached_copy_list
-from .geom import DraftPrecision, precision_step, arc_end_to_center, make_wire
+from .geom import DraftPrecision, precision_step, arc_end_to_center, make_wire, equals
 from .parsers import parse_floats
 from .shape import SvgShape
 

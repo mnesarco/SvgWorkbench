@@ -206,3 +206,42 @@ def make_wire(
         if len(sh.Edges) != len(path):
             sh = comp
     return sh
+
+    
+def equals(
+	u: Vector,
+	v: Vector,
+	precision: int = 0xDECAF
+):
+    """Return False if each delta of the two vectors components is zero.
+
+    Due to rounding errors, a delta is probably never going to be
+    exactly zero. Therefore, it rounds the element by the number
+    of decimals specified in the `precision` parameter - if `precision`
+    is not set the svg import precision preference is used. 
+    It then compares the rounded coordinates against zero.
+
+    Parameters
+    ----------
+    u : Base::Vector3
+        The first vector to compare
+    v : Base::Vector3
+        The second vector to compare  (comparison is commutative)
+    precision : int
+                mathematical precision - if not set the svg import
+                precision preference is used.
+
+    Returns
+    -------
+    bool
+        `True` if each of the coordinate deltas is smaller than precision.
+        `False` otherwise.
+    """
+    delta = u.sub(v)
+    if (precision == 0xDECAF):
+        precision = SVGPrecision
+    x = round(delta.x, precision)
+    y = round(delta.y, precision)
+    z = round(delta.z, precision)
+    return (x == 0 and y == 0 and z == 0)
+
