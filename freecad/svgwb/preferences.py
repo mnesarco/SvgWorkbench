@@ -26,12 +26,20 @@ class SvgImportPreferences(Preferences):
 
     precision = Preference(
         group,
-        name="precision",
-        default=3,
-        label=dtr("SvgWB", "Coordinate Precision"),
-        description=dtr("SvgWB", "Unit: digits behind comma. Important for closed wire detection and tiny edge filtering."),
+        name="resolution",
+        default=0,
+        label=dtr("SvgWB", "Coordinate Resolution"),
+        description=dtr("SvgWB", "precision in coordinate calculation"),
+        options={
+            dtr("SvgWB", "25,4 dpi"): 0,
+            dtr("SvgWB", "254 dpi"): 1,
+            dtr("SvgWB", "2.540 dpi"): 2,
+            dtr("SvgWB", "25.400 dpi"): 3,
+            dtr("SvgWB", "254.000 dpi"): 4,
+            dtr("SvgWB", "2.540.000 dpi"): 5,
+            dtr("SvgWB", "max. dpi"): 6
+        },
         ui_section=dtr("SvgWB", "Geometry"),
-        ui_validators=[valid.min(0), valid.max(6)],
     )
 
     style_import_mode = Preference(
