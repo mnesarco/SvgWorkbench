@@ -227,7 +227,7 @@ class SvgSubPath:
                 path_data["pole2"] = path_data["pole2"].sub(delta)
         elif path_data["type"] == "qbezier":
                 # for qbeziers we also relocate the pole by half of the delta
-                path_data["pole"] = path_data["pole"].sub(delta.scale(0.5))
+                path_data["pole"] = path_data["pole"].sub(delta.scale(0.5, 0.5, 0))
         # all data types have last_v
         path_data["last_v"] = path_data["last_v"].sub(delta)
 
@@ -343,11 +343,12 @@ class SvgSubPath:
                         b.setPoles([last_v, pole1, pole2, next_v])
                         seg = approx_bspline(b, self.discretization).toShape()
                     edges.append(seg)
-                case "qbeziers":
+                case "qbezier":
                     if equals(last_v, next_v):
                         # segment too small - skipping.
                         next_v = last_v
                     else:
+                        pole = pdset["pole"]
                         _precision = precision_step(DraftPrecision + 2)
                         _distance = pole.distanceToLine(last_v, next_v)
                         if _distance < _precision:
