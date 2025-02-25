@@ -24,6 +24,24 @@ class SvgImportPreferences(Preferences):
         ui_section=dtr("SvgWB", "Geometry"),
     )
 
+    precision = Preference(
+        group,
+        name="resolution",
+        default=0,
+        label=dtr("SvgWB", "Coordinate Resolution"),
+        description=dtr("SvgWB", "precision in coordinate calculation"),
+        options={
+            dtr("SvgWB", "25,4 dpi"): 0,
+            dtr("SvgWB", "254 dpi"): 1,
+            dtr("SvgWB", "2.540 dpi"): 2,
+            dtr("SvgWB", "25.400 dpi"): 3,
+            dtr("SvgWB", "254.000 dpi"): 4,
+            dtr("SvgWB", "2.540.000 dpi"): 5,
+            dtr("SvgWB", "max. dpi"): 6
+        },
+        ui_section=dtr("SvgWB", "Geometry"),
+    )
+
     style_import_mode = Preference(
         group,
         name="style_import_mode",
