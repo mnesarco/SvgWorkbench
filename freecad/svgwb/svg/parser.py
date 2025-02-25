@@ -25,7 +25,6 @@ from .polyline import SvgPolyLine
 from .ellipse import SvgEllipse
 from .circle import SvgCircle
 from .dimension import SvgDimension
-from .geom import set_svg_precision as setSVGPrecision
 from . import parsers
 
 from FreeCAD import Matrix  # type: ignore
@@ -55,11 +54,11 @@ class SvgContentHandler(sax.ContentHandler):
             font_size=preferences.font_size(),
         )
         self.disable_unit_scaling = preferences.disable_unit_scaling()
-        setSVGPrecision(preferences.precision())
         self.root: SvgGroup = None
         self.index = SvgIndex()
         self.muted = []
         self.discretization = preferences.edge_approx_points()
+        self.precision = preferences.precision()
 
     def get_id_and_label(self, tag: str, attrs: Attrs) -> tuple[str, str]:
         if not (id := attrs.get("id")):
@@ -200,7 +199,7 @@ class SvgContentHandler(sax.ContentHandler):
 
     def startPath(self, tag: str, attrs: Attrs):
         id, label, transform, style, options = self.get_common(tag, attrs)
-        path = SvgPath(tag, id, label, transform, style, options, attrs.get("d"), self.discretization)
+        path = SvgPath(tag, id, label, transform, style, options, attrs.get("d"), self.discretization, self.precision)
         self.push(StackFrame(path, options, style, transform))
 
     def startText(self, tag: str, attrs: Attrs):
@@ -219,7 +218,7 @@ class SvgContentHandler(sax.ContentHandler):
         id, label, transform, style, options = self.get_common(tag, attrs)
         svg_attrs = parsers.SvgAttrs(attrs, self.dpi)
         x, y, w, h, rx, ry = svg_attrs.get_size_attrs(x=0, y=0, width=0, height=0, rx=0, ry=0)
-        shape = SvgRect(tag, id, label, transform, style, options, x, y, w, h, rx, ry)
+        shape = SvgRect(tag, id, label, transform, style, options, x, y, w, h, rx, ry, self.precision)
         self.push(StackFrame(shape, options, style, transform))
 
     def startLine(self, tag: str, attrs: Attrs):

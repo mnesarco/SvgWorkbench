@@ -13,26 +13,6 @@ from Part import __sortEdges__ as sort_edges  # type: ignore
 # draft precision for calculations
 DraftPrecision = draft_precision()
 
-# svg import precision for comparing coordinates / closing wires.
-SVGPrecision = 0
-
-
-def set_svg_precision(precision: int):
-    """
-    Set the SVG precision used by geom helper functions regarding
-    closing wires and comparing coordinates.
-     
-    Parameters
-    ----------
-    precision : int
-                relevant digits behind comma
-    """
-    global SVGPrecision
-    
-    SVGPrecision = precision
-
-
-
 def precision_step(precision: int = DraftPrecision):
     """
     Return the smallest possible fraction or step size for a given precision.
@@ -210,8 +190,8 @@ def make_wire(
     
 def equals(
 	u: Vector,
-	v: Vector,
-	precision: int = 0xDECAF
+    v: Vector,
+	precision: int = -1
 ):
     """Return False if each delta of the two vectors components is zero.
 
@@ -228,8 +208,8 @@ def equals(
     v : Base::Vector3
         The second vector to compare  (comparison is commutative)
     precision : int
-                mathematical precision - if not set the svg import
-                precision preference is used.
+                mathematical precision - if not set draft precision 
+                preference is used.
 
     Returns
     -------
@@ -238,8 +218,8 @@ def equals(
         `False` otherwise.
     """
     delta = u.sub(v)
-    if (precision == 0xDECAF):
-        precision = SVGPrecision
+    if (precision == -1):
+        precision = DraftPrecision()
     x = round(delta.x, precision)
     y = round(delta.y, precision)
     z = round(delta.z, precision)

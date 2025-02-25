@@ -50,9 +50,10 @@ class PathBreak(Exception):
 class SvgSubPath:
     """Disconnected subpath."""
 
-    def __init__(self, discretization: int, origin : Vector = Vector(0, 0, 0)) -> None:
+    def __init__(self, discretization: int, precision: int, origin : Vector = Vector(0, 0, 0)) -> None:
         self.path = [{"type": "start", "last_v": origin}]
         self.discretization = discretization
+        self.precision = precision
 
     def add_line(self, d: str, args: list[float], *, relative: bool) -> None:
         last_v = self.path[-1]["last_v"]
@@ -234,7 +235,7 @@ class SvgSubPath:
     def add_close(self):
         last_v  = self.path[-1]["last_v"]
         first_v = self.get_last_start()
-        if (equals(last_v, first_v)):
+        if equals(last_v, first_v, self.precision):
             # we assume identity of first and last at configured precision. 
             # So we have to make sure that they really are identical
             self.correct_last_v(self.path[-1], last_v.sub(first_v))
@@ -284,7 +285,7 @@ class SvgSubPath:
                 case "start":
                     last_v = next_v;
                 case "line":
-                    if equals(last_v, next_v):
+                    if equals(last_v, next_v, self.precision):
                         # line segment too short, we simply skip it
                         next_v = last_v
                     else:
@@ -344,7 +345,7 @@ class SvgSubPath:
                         seg = approx_bspline(b, self.discretization).toShape()
                     edges.append(seg)
                 case "qbezier":
-                    if equals(last_v, next_v):
+                    if equals(last_v, next_v, self.precision):
                         # segment too small - skipping.
                         next_v = last_v
                     else:
@@ -370,6 +371,7 @@ class SvgSubPath:
 class SvgPath(SvgShape):
     d: str
     discretization: int
+    precision: int
 
     @cached_copy
     def to_shape(self) -> Shape | None:
@@ -381,7 +383,7 @@ class SvgPath(SvgShape):
     def shapes(self) -> list[Shape]:
         paths: list[SvgSubPath] = []
         commands = iter(PathCommands(self.d))
-        path = SvgSubPath(self.discretization)
+        path = SvgSubPath(self.discretization, self.precision)
         paths.append(path)
         while True:
             try:
@@ -389,7 +391,7 @@ class SvgPath(SvgShape):
             except PathBreak as ex:
                 if ex.end:
                     break
-                path = SvgSubPath(self.discretization, ex.point)
+                path = SvgSubPath(self.discretization, self.precision, ex.point)
                 paths.append(path)
         if len(paths[-1].path) == 1 and paths[-1].path[0]["type"] == "start":
             # nothing more than the start preamble - delete.
