@@ -418,6 +418,9 @@ class SvgPath(SvgShape):
                         if face.Area > 10 * (precision_step(self.precision)**2):
                             # TODO add path name to facetree node                       
                             faces.insert(face, "<insert name here>"  + "_f" + str(++cnt))
+                        else:
+                            add_wire = False
+                            
                     except:
                         pass
                 if add_wire:
