@@ -7,6 +7,7 @@ import math
 import re
 from dataclasses import dataclass
 from typing import Iterator
+from .FaceTree import FaceTreeNode
 
 from FreeCAD import Vector  # type: ignore
 from Part import (  # type: ignore
@@ -396,21 +397,38 @@ class SvgPath(SvgShape):
         if len(paths[-1].path) == 1 and paths[-1].path[0]["type"] == "start":
             # nothing more than the start preamble - delete.
             paths.pop();
-
-        shapes = []
+            
+        cnt = 0;
+        openShapes = []
+        faces = FaceTreeNode()
+        
         for sub_path in paths:
             if sub_path.path:
                 edges = sub_path.create_Edges()
                 sh = make_wire(edges, self.precision, check_closed=False)
-                if self.style.fill_color and sh.isClosed():
-                    sh = Face(sh)
-                    if not sh.isValid():
-                        sh.fix(1e-6, 0, 1)
-                sh = sh.transformGeometry(self.transform)
-                shapes.append(sh)
+                add_wire = True
 
-        return shapes
-
+                if self.style.fill_color and len(sh.Wires) == 1 and sh.Wires[0].isClosed():
+                    try:
+                        face = Face(sh)
+                        if face.isValid():
+                            add_wire = False
+                        else:
+                            face.fix(1e-6, 0, 1)
+                        if face.Area > 10 * (precision_step(self.precision)**2):
+                            # TODO add path name to facetree node                       
+                            faces.insert(face, "<insert name here>"  + "_f" + str(++cnt))
+                    except:
+                        pass
+                if add_wire:
+                    openShapes.append(sh)
+        faces.makeCuts()  
+        result = []      
+        for face in faces.flatten():
+            result.append(face.transformGeometry(self.transform))
+        for face in openShapes:
+            result.append(face.transformGeometry(self.transform))
+        return result
 
 def approx_bspline(
     curve: BezierCurve,
