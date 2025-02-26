@@ -199,7 +199,7 @@ def equals(
     Due to rounding errors, a delta is probably never going to be
     exactly zero. Therefore, it rounds the element by the number
     of decimals specified in the `precision` parameter - if `precision`
-    is not set the svg import precision preference is used. 
+    is not set the draft precision preference is used. 
     It then compares the rounded coordinates against zero.
 
     Parameters
