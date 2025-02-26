@@ -405,7 +405,7 @@ class SvgPath(SvgShape):
         for sub_path in paths:
             if sub_path.path:
                 edges = sub_path.create_Edges()
-                sh = make_wire(edges, self.precision, check_closed=False)
+                sh = make_wire(edges, self.precision, check_closed=True)
                 add_wire = True
 
                 if self.style.fill_color and len(sh.Wires) == 1 and sh.Wires[0].isClosed():
