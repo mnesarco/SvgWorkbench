@@ -141,6 +141,7 @@ def arc_end_to_center(
 
 def make_wire(
     path: list[Edge],
+    precision : int,
     check_closed: bool = False,
     dont_try: bool = False,
 ):
@@ -181,7 +182,7 @@ def make_wire(
         # Code from wmayer forum p15549 to fix the tolerance problem
         # original tolerance = 0.00001
         comp = Compound(path)
-        _sh = comp.connectEdgesToWires(False, precision_step(SVGPrecision))
+        _sh = comp.connectEdgesToWires(False, precision_step(precision))
         sh = _sh.Wires[0]
         if len(sh.Edges) != len(path):
             sh = comp
