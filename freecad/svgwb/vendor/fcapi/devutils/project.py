@@ -19,6 +19,7 @@ class FreecadTool:
     lupdate_langs: list[str]
     addon_dependencies: list[str]
     internal_dependencies: list[str]
+    branch: str
 
 class Project:
     name: str

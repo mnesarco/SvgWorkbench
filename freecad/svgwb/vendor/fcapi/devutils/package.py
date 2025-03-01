@@ -17,7 +17,7 @@ from packaging.requirements import Requirement
 
 
 # Pattern to extract minimum python version from project.requires-python
-MIN_VER_RULE_PATTERN = re.compile(">?=?\s*(.*)")
+MIN_VER_RULE_PATTERN = re.compile(r">?=?\s*(.*)")
 
 
 @total_ordering
@@ -136,7 +136,7 @@ def update_urls(urls: dict[str, str], node: ET.Element):
     for name, url in urls.items():
         out.add((name.lower().strip(), url.strip(), ""))
     for url in node.iterfind("./url"):
-        out.add((url.get("type", "").strip(), url.text.strip(), url.get("branch", "").strip()))
+        out.add((url.get("type", "").strip(), url.text.strip(), ""))
         remove.append(url)
     for url in remove:
         node.remove(url)
@@ -198,7 +198,7 @@ def update_package(base: Path, pyproject: PyProject):
         update_deps(deps, optional=False, type_="python", node=root)
 
     if opt_deps := project.optional_dependencies:
-        for group, deps in opt_deps.items():
+        for deps in opt_deps.values():
             update_deps(deps, optional=True, type_="python", node=root)
 
     if urls := project.urls:
@@ -220,5 +220,13 @@ def update_package(base: Path, pyproject: PyProject):
         if deps := freecad.internal_dependencies:
             update_deps(deps, optional=False, type_="internal", node=root)
 
+        set_repository_branch(root, freecad.branch or "master")
+
     ET.indent(root, " " * 4, 0)
     tree.write(file, encoding="utf-8")
+
+
+def set_repository_branch(root: ET.Element, branch: str):
+    for child in root.iterfind("./url"):
+        if child.get("type", "").lower() == "repository":
+            child.set("branch", branch)
