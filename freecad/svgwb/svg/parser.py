@@ -1,18 +1,17 @@
 # SPDX-License: LGPL-3.0-or-later
 # (c) 2025 Frank David Martínez Muñoz. <mnesarco at gmail.com>
 
+# ruff: noqa: A001
+
 from __future__ import annotations
 
 from dataclasses import dataclass, astuple
 from pathlib import Path
-from typing import Any, Generator
+from typing import TYPE_CHECKING
 from xml import sax
 from hashlib import md5
 
-from ..preferences import SvgImportPreferences
-
 from .text import SvgText
-from .shape import SvgShape
 from .style import SvgColor, SvgStyle
 from .options import SvgOptions
 from .group import SvgGroup, SvgObject
@@ -29,20 +28,31 @@ from . import parsers
 
 from FreeCAD import Matrix  # type: ignore
 
+if TYPE_CHECKING:
+    from ..preferences import SvgImportPreferences
+    from .shape import SvgShape
+    from collections.abc import Generator
+
 
 @dataclass
 class StackFrame:
+    """Build stack frame."""
+
     shape: SvgShape | None = None
     options: SvgOptions | None = None
     style: SvgStyle | None = None
     transform: Matrix | None = None
 
 
-Attrs = dict[str, str]
+Attrs = dict[str, str]  # Typing
 
 
 class SvgContentHandler(sax.ContentHandler):
-    def __init__(self, preferences: SvgImportPreferences, dpi_fallback: float = 96.0):
+    """
+    Svg content handler.
+    """
+
+    def __init__(self, preferences: SvgImportPreferences, dpi_fallback: float = 96.0) -> None:
         super().__init__()
         self.stack: list[StackFrame] = []
         self.dpi = dpi_fallback
@@ -128,14 +138,19 @@ class SvgContentHandler(sax.ContentHandler):
             )
         return options
 
-    def get_common(self, tag, attrs: Attrs, unit_scaling: Matrix | None = None):
+    def get_common(
+        self,
+        tag,
+        attrs: Attrs,
+        unit_scaling: Matrix | None = None,
+    ) -> tuple[str, str, Matrix, SvgStyle, SvgOptions]:
         id, label = self.get_id_and_label(tag, attrs)
         transform = self.get_transform(attrs, unit_scaling)
         style = self.get_style(tag, attrs)
         options = self.get_options(tag, attrs, id, transform)
         return id, label, transform, style, options
 
-    def startElement(self, tag: str, attrs: Attrs):
+    def startElement(self, tag: str, attrs: Attrs) -> None:
         if self.muted:
             self.muted.append(tag)
             return
@@ -143,14 +158,14 @@ class SvgContentHandler(sax.ContentHandler):
             self.count += 1
             handler(tag, attrs)
 
-    def endElement(self, tag):
+    def endElement(self, tag) -> None:
         if self.muted:
             self.muted.pop()
             return
         if handler := getattr(self, f"end{tag.capitalize()}", None):
             handler(tag)
 
-    def startRootSvg(self, _tag: str, attrs: Attrs):
+    def startRootSvg(self, _tag: str, attrs: Attrs) -> None:
         frame = StackFrame(
             options=SvgOptions(),
             style=self.default_style,
@@ -161,7 +176,8 @@ class SvgContentHandler(sax.ContentHandler):
             inks_ver_f = parsers.parse_inkscape_version(inks_full_ver)
             # Inkscape before 0.92 used 90 dpi as resolution
             # Newer versions use 96 dpi
-            if inks_ver_f < 0.92:
+            OLD_INKSCAPE_VER = 0.92  # noqa: N806
+            if inks_ver_f < OLD_INKSCAPE_VER:
                 self.dpi = 90.0
             else:
                 self.dpi = 96.0
@@ -171,17 +187,17 @@ class SvgContentHandler(sax.ContentHandler):
             if (width := attrs.get("width")) and ("mm" in width or "in" in width or "cm" in width):
                 self.dpi = 96.0
 
-    def startSvg(self, tag: str, attrs: Attrs):
+    def startSvg(self, tag: str, attrs: Attrs) -> None:
         is_root = False
         if not self.stack:
             self.startRootSvg(tag, attrs)
             is_root = True
 
         unit_scaling = parsers.parse_unit_scaling(
-            self.disable_unit_scaling,
-            self.dpi,
-            not is_root,
-            attrs,
+            disable_unit_scaling=self.disable_unit_scaling,
+            dpi=self.dpi,
+            nested=not is_root,
+            attrs=attrs,
         )
         id, label, transform, style, options = self.get_common(tag, attrs, unit_scaling)
         if is_root:
@@ -189,23 +205,33 @@ class SvgContentHandler(sax.ContentHandler):
         group = SvgGroup(tag, id, label, transform, style, options)
         self.push(StackFrame(group, options, style, transform))
 
-    def startG(self, tag: str, attrs: Attrs):
+    def startG(self, tag: str, attrs: Attrs) -> None:
         id, label, transform, style, options = self.get_common(tag, attrs)
         group = SvgGroup(tag, id, label, transform, style, options)
         self.push(StackFrame(group, options, style, transform))
 
-    def startSymbol(self, tag: str, attrs: Attrs):
+    def startSymbol(self, tag: str, attrs: Attrs) -> None:
         self.startSvg(tag, attrs)
 
-    def startPath(self, tag: str, attrs: Attrs):
+    def startPath(self, tag: str, attrs: Attrs) -> None:
         id, label, transform, style, options = self.get_common(tag, attrs)
-        path = SvgPath(tag, id, label, transform, style, options, attrs.get("d"), self.discretization, self.precision)
+        path = SvgPath(
+            tag,
+            id,
+            label,
+            transform,
+            style,
+            options,
+            attrs.get("d"),
+            self.discretization,
+            self.precision,
+        )
         self.push(StackFrame(path, options, style, transform))
 
-    def startText(self, tag: str, attrs: Attrs):
+    def startText(self, tag: str, attrs: Attrs) -> None:
         self.startTspan(tag, attrs)
 
-    def startTspan(self, tag: str, attrs: Attrs):
+    def startTspan(self, tag: str, attrs: Attrs) -> None:
         id, label, transform, style, options = self.get_common(tag, attrs)
         parent = self.stack[-1].shape
         if not isinstance(parent, SvgText):
@@ -214,64 +240,65 @@ class SvgContentHandler(sax.ContentHandler):
         shape = SvgText(tag, id, label, transform, style, options, x, y, parent)
         self.push(StackFrame(shape, options, style, transform))
 
-    def startRect(self, tag: str, attrs: Attrs):
+    def startRect(self, tag: str, attrs: Attrs) -> None:
         id, label, transform, style, options = self.get_common(tag, attrs)
         svg_attrs = parsers.SvgAttrs(attrs, self.dpi)
         x, y, w, h, rx, ry = svg_attrs.get_size_attrs(x=0, y=0, width=0, height=0, rx=0, ry=0)
-        shape = SvgRect(tag, id, label, transform, style, options, x, y, w, h, rx, ry, self.precision)
+        shape = SvgRect(
+            tag, id, label, transform, style, options, x, y, w, h, rx, ry, self.precision
+        )
         self.push(StackFrame(shape, options, style, transform))
 
-    def startLine(self, tag: str, attrs: Attrs):
+    def startLine(self, tag: str, attrs: Attrs) -> None:
         id, label, transform, style, options = self.get_common(tag, attrs)
         svg_attrs = parsers.SvgAttrs(attrs, self.dpi)
         x1, y1, x2, y2 = svg_attrs.get_size_attrs(x1=0, y1=0, x2=0, y2=0)
         shape = SvgLine(tag, id, label, transform, style, options, x1, y1, x2, y2)
         self.push(StackFrame(shape, options, style, transform))
 
-    def startPolyline(self, tag: str, attrs: Attrs):
+    def startPolyline(self, tag: str, attrs: Attrs) -> None:
         id, label, transform, style, options = self.get_common(tag, attrs)
         svg_attrs = parsers.SvgAttrs(attrs, self.dpi)
         points = svg_attrs.points()
         shape = SvgPolyLine(tag, id, label, transform, style, options, points, False)
         self.push(StackFrame(shape, options, style, transform))
 
-    def startPolygon(self, tag: str, attrs: Attrs):
+    def startPolygon(self, tag: str, attrs: Attrs) -> None:
         id, label, transform, style, options = self.get_common(tag, attrs)
         svg_attrs = parsers.SvgAttrs(attrs, self.dpi)
         points = svg_attrs.points()
         shape = SvgPolyLine(tag, id, label, transform, style, options, points, True)
         self.push(StackFrame(shape, options, style, transform))
 
-    def startEllipse(self, tag: str, attrs: Attrs):
+    def startEllipse(self, tag: str, attrs: Attrs) -> None:
         id, label, transform, style, options = self.get_common(tag, attrs)
         svg_attrs = parsers.SvgAttrs(attrs, self.dpi)
         cx, cy, rx, ry = svg_attrs.get_size_attrs(cx=0, cy=0, rx=0, ry=0)
         shape = SvgEllipse(tag, id, label, transform, style, options, cx, cy, rx, ry)
         self.push(StackFrame(shape, options, style, transform))
 
-    def startCircle(self, tag: str, attrs: Attrs):
+    def startCircle(self, tag: str, attrs: Attrs) -> None:
         id, label, transform, style, options = self.get_common(tag, attrs)
         svg_attrs = parsers.SvgAttrs(attrs, self.dpi)
         cx, cy, r = svg_attrs.get_size_attrs(cx=0, cy=0, r=0)
         shape = SvgCircle(tag, id, label, transform, style, options, cx, cy, r)
         self.push(StackFrame(shape, options, style, transform))
 
-    def startUse(self, tag: str, attrs: Attrs):
+    def startUse(self, tag: str, attrs: Attrs) -> None:
         id, label, transform, style, options = self.get_common(tag, attrs)
         x, y = parsers.SvgAttrs(attrs, self.dpi).get_size_attrs(x=0, y=0)
         href = attrs.get("xlink:href", "")
-        if href.startswith("#"):
-            href = href[1:]
+        href = href.removeprefix("#")
         shape = SvgUse(tag, id, label, transform, style, options, href, x, y, self.index)
         self.push(StackFrame(shape, options, style, transform))
 
-    def characters(self, content):
+    def characters(self, content: str) -> None:
         if self.muted:
             return
         if self.stack and (text := self.stack[-1].shape) and isinstance(text, SvgText):
             text.append(content)
 
-    def push(self, frame: StackFrame):
+    def push(self, frame: StackFrame) -> None:
         shape = frame.shape
         if self.stack:
             parent = self.stack[-1]
@@ -281,56 +308,61 @@ class SvgContentHandler(sax.ContentHandler):
         if shape:
             self.index.add(shape)
 
-    def endPath(self, _tag: str):
+    def endPath(self, _tag: str) -> None:
         self.stack.pop()
 
-    def endEllipse(self, _tag: str):
+    def endEllipse(self, _tag: str) -> None:
         self.stack.pop()
 
-    def endCircle(self, _tag: str):
+    def endCircle(self, _tag: str) -> None:
         self.stack.pop()
 
-    def endUse(self, _tag: str):
+    def endUse(self, _tag: str) -> None:
         self.stack.pop()
 
-    def endText(self, _tag: str):
+    def endText(self, _tag: str) -> None:
         self.stack.pop()
 
-    def endTspan(self, _tag: str):
+    def endTspan(self, _tag: str) -> None:
         self.stack.pop()
 
-    def endRect(self, _tag: str):
+    def endRect(self, _tag: str) -> None:
         self.stack.pop()
 
-    def endLine(self, _tag: str):
+    def endLine(self, _tag: str) -> None:
         self.stack.pop()
 
-    def endPolygon(self, _tag: str):
+    def endPolygon(self, _tag: str) -> None:
         self.stack.pop()
 
-    def endPolyline(self, _tag: str):
+    def endPolyline(self, _tag: str) -> None:
         self.stack.pop()
 
-    def endG(self, _tag: str):
+    def endG(self, _tag: str) -> None:
         self.stack.pop()
 
-    def endSymbol(self, _tag: str):
+    def endSymbol(self, _tag: str) -> None:
         self.stack.pop()
 
-    def endSvg(self, tag: str):
+    def endSvg(self, _tag: str) -> None:
         self.root = self.stack.pop().shape
 
-    def startMarker(self, tag: str, attrs: Attrs):
+    def startMarker(self, tag: str, _attrs: Attrs) -> None:
         self.muted.append(tag)
 
 
 @dataclass
 class SvgParseResult:
+    """
+    Results from parsing svg.
+    """
+
     root: SvgGroup
     index: SvgIndex
     hash: str
 
     def objects(self) -> Generator[SvgObject, None, None]:
+        """Return a flat generator with all parsed svg objects."""
         if origin := self.index.find("freecad_origin"):
             shape = origin.to_shape()
             if shape:
@@ -348,14 +380,15 @@ class SvgParseResult:
                 yield obj
 
 
-
-def parse(filename: str | Path, preferences: SvgImportPreferences, dpi_fallback: float = 96.0) -> SvgParseResult:
-    parser = sax.make_parser()
+def parse(
+    filename: str | Path, preferences: SvgImportPreferences, dpi_fallback: float = 96.0
+) -> SvgParseResult:
+    parser = sax.make_parser()  # NOTE: use defusedxml instead. But it is an external dependency.
     parser.setFeature(sax.handler.feature_external_ges, False)
     handler = SvgContentHandler(preferences, dpi_fallback)
     parser.setContentHandler(handler)
 
-    BUFFER_SIZE = 4096
+    BUFFER_SIZE = 4096  # noqa: N806
     hasher = md5(usedforsecurity=False)
     with Path(filename).open("rb") as f:
         while data := f.read(BUFFER_SIZE):

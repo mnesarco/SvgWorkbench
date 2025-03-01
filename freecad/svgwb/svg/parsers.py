@@ -1,12 +1,17 @@
 # SPDX-License: LGPL-3.0-or-later
 # (c) 2025 Frank David Martínez Muñoz. <mnesarco at gmail.com>
 
+# ruff: noqa: N806
+
 from __future__ import annotations
 
 import re
 import math
-from typing import Iterator
 from FreeCAD import Matrix, Vector  # type: ignore
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 SvgUnits = {
@@ -67,6 +72,8 @@ _INK_VERSION_RE = re.compile(r"\d+\.\d+")
 
 
 class SvgQuantity:
+    """Float quantity with units."""
+
     _num = _FLOAT_RE.pattern
     _unit = "(px|pt|pc|mm|cm|in|em|ex|%)?"
     _full_num = re.compile(_num + _unit)
@@ -75,30 +82,36 @@ class SvgQuantity:
     exponent: str
     unit: str
 
-    def __init__(self, value: str):
+    def __init__(self, value: str) -> None:
+        """Parse quantity with units."""
         number, exponent, unit = self._full_num.findall(value)[0]
         self.number = float(number)
         self.exponent = exponent
         self.unit = unit
 
-    def __iter__(self):
+    def __iter__(self) -> re.Iterator[float | str]:
+        """Expand as tuple"""
         return iter((self.number, self.exponent, self.unit))
 
 
 class SvgTransformations:
+    """Svg transform parser."""
+
     _op = "(matrix|translate|scale|rotate|skewX|skewY)"
     _val = "\\((.*?)\\)"
     _transf = _op + "\\s*?" + _val
     regex = re.compile(_transf, re.DOTALL)
 
-    def __init__(self, text: str):
+    def __init__(self, text: str) -> None:
+        """Parse svg transformation."""
         ops = []
         for op, args in self.regex.findall(text):
             _args = [float(v) for (v, e) in _FLOAT_RE.findall(args)]
             ops.append((op, _args))
         self.ops = ops
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[tuple[str, list[float]]]:
+        """Retrieve all parsed transformations."""
         return iter(self.ops)
 
 
@@ -110,8 +123,7 @@ def parse_inkscape_version(text: str) -> float:
     inks_ver_pars = _INK_VERSION_RE.search(text)
     if inks_ver_pars is not None:
         return float(inks_ver_pars.group(0))
-    else:
-        return 99.99
+    return 99.99
 
 
 def content_split(content: str) -> list[str]:
@@ -124,7 +136,8 @@ def style_split(content: str) -> list[tuple[str, str]]:
 
 
 def parse_svg_transform(tr: str) -> Matrix:
-    """Return a FreeCAD matrix from an SVG transform attribute.
+    """
+    Return a FreeCAD matrix from an SVG transform attribute.
 
     Parameters
     ----------
@@ -136,6 +149,7 @@ def parse_svg_transform(tr: str) -> Matrix:
     -------
     Base::Matrix4D
         The translated matrix.
+
     """
     m = Matrix()
     for transformation, args in SvgTransformations(tr):
@@ -153,15 +167,16 @@ def parse_svg_transform(tr: str) -> Matrix:
             cx = 0
             cy = 0
             angle = args[0]
-            if len(args) >= 3:
-                # Rotate around a non-origin center point (note: SVG y axis is opposite FreeCAD y axis)
+            if len(args) >= 3:  # noqa: PLR2004
+                # Rotate around a non-origin center point
+                # (note: SVG y axis is opposite FreeCAD y axis)
                 cx = args[1]
                 cy = args[2]
                 m.move(Vector(-cx, cy, 0))  # Reposition for rotation
             # Mirroring one axis is equal to changing the direction
             # of rotation
             m.rotateZ(math.radians(-angle))
-            if len(args) >= 3:
+            if len(args) >= 3:  # noqa: PLR2004
                 m.move(Vector(cx, -cy, 0))  # Reverse repositioning
 
         elif transformation == "skewX":
@@ -171,7 +186,7 @@ def parse_svg_transform(tr: str) -> Matrix:
                 1, -C, 0, 0,
                 0,  1, 0, 0,
                 0,  0, 1, 0,
-                0,  0, 0, 1
+                0,  0, 0, 1,
             )
             m = m.multiply(_m)
             # fmt: on
@@ -183,7 +198,7 @@ def parse_svg_transform(tr: str) -> Matrix:
                  1, 0, 0, 0,
                 -B, 1, 0, 0,
                  0, 0, 1, 0,
-                 0, 0, 0, 1
+                 0, 0, 0, 1,
             )
             m = m.multiply(_m)
             # fmt: on
@@ -203,7 +218,7 @@ def parse_svg_transform(tr: str) -> Matrix:
                  A, -C,  0,  E,
                 -B,  D,  0, -F,
                  0,  0,  1,  0,
-                 0,  0,  0,  1
+                 0,  0,  0,  1,
             )
             m = m.multiply(_m)
             # fmt: on
@@ -211,7 +226,11 @@ def parse_svg_transform(tr: str) -> Matrix:
 
 
 def parse_unit_scaling(
-    disable_unit_scaling: bool, dpi: float, nested: bool, attrs: dict[str, str]
+    *,
+    disable_unit_scaling: bool,
+    dpi: float,
+    nested: bool,
+    attrs: dict[str, str],
 ) -> Matrix:
     m = Matrix()
     if not disable_unit_scaling:
@@ -232,26 +251,28 @@ def parse_unit_scaling(
             sy = abh / vbh
             preserveAspectRatio = attrs.get("preserveAspectRatio", "").lower()
             uniform_scaling = round(sx / sy, 5) == 1
-            if uniform_scaling:
+            if uniform_scaling or preserveAspectRatio.startswith("none"):
                 m.scale(Vector(sx, sy, 1))
             else:
-                if preserveAspectRatio.startswith("none"):
-                    m.scale(Vector(sx, sy, 1))
+                # preserve the aspect ratio
+                if preserveAspectRatio.endswith("slice"):
+                    sxy = max(sx, sy)
                 else:
-                    # preserve the aspect ratio
-                    if preserveAspectRatio.endswith("slice"):
-                        sxy = max(sx, sy)
-                    else:
-                        sxy = min(sx, sy)
-                    m.scale(Vector(sxy, sxy, 1))
+                    sxy = min(sx, sy)
+                m.scale(Vector(sxy, sxy, 1))
         elif not nested:
             # fallback to current dpi
             m.scale(Vector(25.4 / dpi, 25.4 / dpi, 1))
     return m
 
 
-def parse_size(length: str, mode="discard", base=1):
-    """Parse the length string containing number and unit.
+def parse_size(
+    length: str,
+    mode: str = "discard",
+    base: float = 1,
+) -> float | tuple[float, str] | bool:
+    """
+    Parse the length string containing number and unit.
 
     Parameters
     ----------
@@ -277,6 +298,7 @@ def parse_size(length: str, mode="discard", base=1):
         millimeters or pixels.
     float, string
         A tuple with the numeric value, and the unit if `mode='tuple'`.
+
     """
     # Dictionaries to convert units to millimeters or pixels.
     #
@@ -291,25 +313,31 @@ def parse_size(length: str, mode="discard", base=1):
     number, _exp, unit = SvgQuantity(length)
     if mode == "discard":
         return number
-    elif mode == "tuple":
+    if mode == "tuple":
         return number, unit
-    elif mode == "isabsolute":
+    if mode == "isabsolute":
         return unit in ("mm", "cm", "in", "px", "pt")
-    elif mode == "mm96.0" or mode == "mm90.0":
+    if mode in ("mm96.0", "mm90.0"):
         return number * units[unit]
-    elif mode == "css96.0" or mode == "css90.0":
+    if mode in ("css96.0", "css90.0"):
         if unit != "%":
             return number * units[unit]
-        else:
-            return number * base
+        return number * base
+    msg = f"Invalid mode {mode}"
+    raise ValueError(msg)
+
 
 class SvgAttrs:
-    def __init__(self, attrs: dict[str, str], dpi: float, base: float = 1):
+    """Attribute parser."""
+
+    def __init__(self, attrs: dict[str, str], dpi: float, base: float = 1) -> None:
+        """Create attribute parser."""
         self.attrs = attrs
         self.mode = f"css{dpi!s}"
         self.base = base
 
     def get_size_attrs(self, **kw) -> Iterator[float]:
+        """Parse size based attributes."""
         data = self.attrs.get
         mode = self.mode
         base = self.base
@@ -319,7 +347,8 @@ class SvgAttrs:
             else:
                 yield parse_size(v, mode, base)
 
-    def points(self):
+    def points(self) -> list[float]:
+        """Parse points attribute if present."""
         if points := self.attrs.get("points"):
             return parse_floats(points)
         return []
