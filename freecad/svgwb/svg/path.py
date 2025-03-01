@@ -6,8 +6,7 @@ from __future__ import annotations
 import math
 import re
 from dataclasses import dataclass
-from typing import Iterator
-from .FaceTree import FaceTreeNode
+from .face_tree import FaceTreeNode
 
 from FreeCAD import Vector  # type: ignore
 from Part import (  # type: ignore
@@ -17,42 +16,60 @@ from Part import (  # type: ignore
     Ellipse,
     Face,
     LineSegment,
-    OCCError,
     Shape,
+    Edge,
 )
-from Part import makeCompound as make_compound  # type: ignore
+from Part import makeCompound as make_compound  # type: ignore  # noqa: N813
 
 from .cache import cached_copy, cached_copy_list
 from .geom import DraftPrecision, precision_step, arc_end_to_center, make_wire, equals
 from .parsers import parse_floats
 from .shape import SvgShape
+from typing import TYPE_CHECKING, NoReturn
+from contextlib import suppress
+from itertools import chain, count
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 class PathCommands:
+    """
+    Path segments parser.
+    """
+
     _op = "([mMlLhHvVaAcCqQsStTzZ])"
     _args = "([^mMlLhHvVaAcCqQsStTzZ]*)"
     _command = "\\s*?" + _op + "\\s*?" + _args + "\\s*?"
     regex = re.compile(_command, re.DOTALL)
 
-    def __init__(self, d: str):
+    def __init__(self, d: str) -> None:
         regex = self.regex
         self.commands = [(cmd, parse_floats(args)) for cmd, args in regex.findall(d)]
 
-    def __iter__(self):
+    def __iter__(self) -> re.Iterator[tuple[str, list[float]]]:
         return iter(self.commands)
 
 
 @dataclass
-class PathBreak(Exception):
+class PathBreak(Exception):  # noqa: N818
+    """
+    Svg subpath termination.
+    """
+
     point: Vector
     end: bool
+
+
+class InvalidPathDataError(Exception):
+    """Unacceptable svg path data."""
 
 
 class SvgSubPath:
     """Disconnected subpath."""
 
-    def __init__(self, discretization: int, precision: int, origin : Vector = Vector(0, 0, 0)) -> None:
-        self.path = [{"type": "start", "last_v": origin}]
+    def __init__(self, discretization: int, precision: int, origin: Vector | None = None) -> None:
+        self.path = [{"type": "start", "last_v": origin or Vector(0, 0, 0)}]
         self.discretization = discretization
         self.precision = precision
 
@@ -69,7 +86,7 @@ class SvgSubPath:
             if self.path[-1]["type"] == "start":
                 self.path[-1]["last_v"] = last_v
             else:
-                self.path.append({"type": "start", "last_v": last_v})    
+                self.path.append({"type": "start", "last_v": last_v})
 
         for x, y in zip(args[0::2], args[1::2]):
             if relative:
@@ -78,8 +95,7 @@ class SvgSubPath:
                 last_v = Vector(x, -y, 0)
             self.path.append({"type": "line", "last_v": last_v})
 
-
-    def add_horizontal(self, args: list[float], relative: bool):
+    def add_horizontal(self, args: list[float], relative: bool) -> None:
         last_v = self.path[-1]["last_v"]
         for x in args:
             if relative:
@@ -88,16 +104,16 @@ class SvgSubPath:
                 last_v = Vector(x, last_v.y, 0)
             self.path.append({"type": "line", "last_v": last_v})
 
-    def add_vertical(self, args: list[float], relative: bool):
+    def add_vertical(self, args: list[float], relative: bool) -> None:
         last_v = self.path[-1]["last_v"]
         for y in args:
             if relative:
                 last_v = Vector(last_v.x, last_v.y - y, 0)
             else:
-                last_v = Vector(last_v.x, - y, 0)
+                last_v = Vector(last_v.x, -y, 0)
             self.path.append({"type": "line", "last_v": last_v})
 
-    def add_arc(self, args: list[float], relative: bool):
+    def add_arc(self, args: list[float], relative: bool) -> None:
         last_v = self.path[-1]["last_v"]
         p_iter = zip(
             args[0::7],
@@ -107,6 +123,7 @@ class SvgSubPath:
             args[4::7],
             args[5::7],
             args[6::7],
+            strict=False,
         )
         for rx, ry, x_rotation, large_flag, sweep_flag, x, y in p_iter:
             # support for large-arc and x-rotation is missing
@@ -114,16 +131,17 @@ class SvgSubPath:
                 last_v = last_v.add(Vector(x, -y, 0))
             else:
                 last_v = Vector(x, -y, 0)
-            self.path.append({"type": "arc", 
-                              "rx": rx,
-                              "ry": ry,
-                              "x_rotation": x_rotation,
-                              "large_flag": large_flag,
-                              "sweep_flag": sweep_flag,
-                              "last_v": last_v
-                             })
+            self.path.append({
+                "type": "arc",
+                "rx": rx,
+                "ry": ry,
+                "x_rotation": x_rotation,
+                "large_flag": large_flag,
+                "sweep_flag": sweep_flag,
+                "last_v": last_v,
+            })
 
-    def add_cubic_bezier(self, args: list[float], relative: bool, smooth: bool):
+    def add_cubic_bezier(self, args: list[float], relative: bool, smooth: bool) -> None:
         last_v = self.path[-1]["last_v"]
         if smooth:
             p_iter = list(
@@ -134,7 +152,8 @@ class SvgSubPath:
                     args[1::4],
                     args[2::4],
                     args[3::4],
-                )
+                    strict=False,
+                ),
             )
         else:
             p_iter = list(
@@ -145,7 +164,8 @@ class SvgSubPath:
                     args[3::6],
                     args[4::6],
                     args[5::6],
-                )
+                    strict=False,
+                ),
             )
         for p1x, p1y, p2x, p2y, x, y in p_iter:
             if smooth:
@@ -165,11 +185,12 @@ class SvgSubPath:
                 pole2 = Vector(p2x, -p2y, 0)
                 last_v = Vector(x, -y, 0)
 
-            self.path.append({"type": "cbezier", 
-                              "pole1": pole1,
-                              "pole2": pole2,
-                              "last_v": last_v
-                             }) 
+            self.path.append({
+                "type": "cbezier",
+                "pole1": pole1,
+                "pole2": pole2,
+                "last_v": last_v,
+            })
 
     def add_quadratic_bezier(self, args: list[float], relative: bool, smooth: bool):
         last_v = self.path[-1]["last_v"]
@@ -180,7 +201,8 @@ class SvgSubPath:
                     args[1::2],
                     args[0::2],
                     args[1::2],
-                )
+                    strict=False,
+                ),
             )
         else:
             p_iter = list(
@@ -189,7 +211,8 @@ class SvgSubPath:
                     args[1::4],
                     args[2::4],
                     args[3::4],
-                )
+                    strict=False,
+                ),
             )
         for px, py, x, y in p_iter:
             if smooth:
@@ -206,45 +229,47 @@ class SvgSubPath:
                 last_v = last_v.add(Vector(x, -y, 0))
             else:
                 last_v = Vector(x, -y, 0)
-                
-            self.path.append({"type": "qbezier", 
-                              "pole": pole,
-                              "last_v": last_v
-                             }) 
-            
-    def get_last_start(self):
-        """ Find the last Path data element of type 'start' """
+
+            self.path.append({
+                "type": "qbezier",
+                "pole": pole,
+                "last_v": last_v,
+            })
+
+    def get_last_start(self) -> Vector:
+        """Find the last Path data element of type 'start'."""
         for dct in reversed(self.path):
             if dct["type"] == "start":
                 return dct["last_v"]
         return Vector(0, 0, 0)
 
-    def correct_last_v(self, path_data : dict, delta : Vector):
-        """ Correct the endpoint of the given path dataset by
-    	    the given delta and move possibly associated
-    	    member accordingly.
-    	"""
+    def correct_last_v(self, path_data: dict, delta: Vector) -> None:
+        """
+        Correct the endpoint of the given path dataset.
+
+        given a delta, move possibly associated member accordingly.
+        """
         if path_data["type"] == "cbezier":
-                # for cbeziers we also relocate the second pole
-                path_data["pole2"] = path_data["pole2"].sub(delta)
+            # for cbeziers we also relocate the second pole
+            path_data["pole2"] = path_data["pole2"].sub(delta)
         elif path_data["type"] == "qbezier":
-                # for qbeziers we also relocate the pole by half of the delta
-                path_data["pole"] = path_data["pole"].sub(delta.scale(0.5, 0.5, 0))
+            # for qbeziers we also relocate the pole by half of the delta
+            path_data["pole"] = path_data["pole"].sub(delta.scale(0.5, 0.5, 0))
         # all data types have last_v
         path_data["last_v"] = path_data["last_v"].sub(delta)
 
-    def add_close(self):
-        last_v  = self.path[-1]["last_v"]
+    def add_close(self) -> NoReturn:
+        last_v = self.path[-1]["last_v"]
         first_v = self.get_last_start()
         if equals(last_v, first_v, self.precision):
-            # we assume identity of first and last at configured precision. 
+            # we assume identity of first and last at configured precision.
             # So we have to make sure that they really are identical
             self.correct_last_v(self.path[-1], last_v.sub(first_v))
         else:
             self.path.append({"type": "line", "last_v": first_v})
-        raise PathBreak(first_v, False)
+        raise PathBreak(first_v, end=False)
 
-    def start(self, commands: Iterator[tuple[str, list[float]]]):
+    def start(self, commands: Iterator[tuple[str, list[float]]]) -> NoReturn:
         for d, args in commands:
             relative = d.islower()
             smooth = d in "sStT"
@@ -270,21 +295,19 @@ class SvgSubPath:
             elif d in "Zz":
                 self.add_close()
 
-        raise PathBreak(self.path[-1]["last_v"], True)
-    
-    def create_Edges(self):
-        """ This Function creates shapes from path data sets and
-            returns them in an ordered list.
-        """
+        raise PathBreak(self.path[-1]["last_v"], end=True)
+
+    def create_edges(self) -> list[Edge]:
+        """Return ordered lits segments from path data."""
         if not type(self.path[0]) is dict:
             return None
         edges = []
         last_v = Vector(0, 0, 0)
         for pdset in self.path:
-            next_v = pdset["last_v"];
-            match (pdset["type"]):
+            next_v = pdset["last_v"]
+            match pdset["type"]:
                 case "start":
-                    last_v = next_v;
+                    last_v = next_v
                 case "line":
                     if equals(last_v, next_v, self.precision):
                         # line segment too short, we simply skip it
@@ -296,13 +319,17 @@ class SvgSubPath:
                     ry = pdset["ry"]
                     x_rotation = pdset["x_rotation"]
                     large_flag = pdset["large_flag"]
-                    sweep_flag = pdset["sweep_flag"]           
+                    sweep_flag = pdset["sweep_flag"]
                     # Calculate the possible centers for an arc
                     # in 'endpoint parameterization'.
                     _x_rot = math.radians(-x_rotation)
                     (solution, (rx, ry)) = arc_end_to_center(
-                        last_v, next_v, rx, ry, 
-                        x_rotation=_x_rot, correction=True
+                        last_v,
+                        next_v,
+                        rx,
+                        ry,
+                        x_rotation=_x_rot,
+                        correction=True,
                     )
                     # Choose one of the two solutions
                     neg_sol = large_flag != sweep_flag
@@ -316,10 +343,9 @@ class SvgSubPath:
                     if sweep_flag:
                         angle1 = angle1 + angle_delta
                         angle_delta = -angle_delta
-    
+
                     d90 = math.radians(90)
-                    e1a = Arc(e1, angle1 - swap_axis * d90, 
-                                  angle1 + angle_delta - swap_axis * d90)
+                    e1a = Arc(e1, angle1 - swap_axis * d90, angle1 + angle_delta - swap_axis * d90)
                     seg = e1a.toShape()
                     if swap_axis:
                         seg.rotate(v_center, Vector(0, 0, 1), 90)
@@ -329,14 +355,14 @@ class SvgSubPath:
                     if sweep_flag:
                         seg.reverse()
                     edges.append(seg)
-                    
+
                 case "cbezier":
                     pole1 = pdset["pole1"]
                     pole2 = pdset["pole2"]
                     _precision = precision_step(DraftPrecision + 2)
                     _d1 = pole1.distanceToLine(last_v, next_v)
                     _d2 = pole2.distanceToLine(last_v, next_v)
-                    if  _d1 < _precision and _d2 < _precision:
+                    if _d1 < _precision and _d2 < _precision:
                         # poles and endpints are all on a line
                         _seg = LineSegment(self.last_v, next_v)
                         seg = _seg.toShape()
@@ -363,22 +389,25 @@ class SvgSubPath:
                             seg = approx_bspline(b, self.discretization).toShape()
                         edges.append(seg)
                 case _:
-                    raise Exception("Illegal path_data type. {}" % pdset["type"])
+                    msg = f"Illegal path_data type. {pdset['type']}"
+                    raise InvalidPathDataError(msg)
             last_v = next_v
         return edges
-            
+
 
 @dataclass
 class SvgPath(SvgShape):
+    """Svg Sub-Path shape builder."""
+
     d: str
     discretization: int
     precision: int
 
     @cached_copy
     def to_shape(self) -> Shape | None:
-        paths = [s for s in self.shapes()]
-        if paths:
+        if paths := self.shapes():
             return make_compound(paths)
+        return None
 
     @cached_copy_list
     def shapes(self) -> list[Shape]:
@@ -389,49 +418,45 @@ class SvgPath(SvgShape):
         while True:
             try:
                 path.start(commands)
-            except PathBreak as ex:
+            except PathBreak as ex:  # noqa: PERF203
                 if ex.end:
                     break
                 path = SvgSubPath(self.discretization, self.precision, ex.point)
                 paths.append(path)
         if len(paths[-1].path) == 1 and paths[-1].path[0]["type"] == "start":
             # nothing more than the start preamble - delete.
-            paths.pop();
-            
-        cnt = 0;
-        openShapes = []
+            paths.pop()
+
+        cnt = count(1)
+        open_shapes = []
         faces = FaceTreeNode()
-        
+
         for sub_path in paths:
             if sub_path.path:
-                edges = sub_path.create_Edges()
+                edges = sub_path.create_edges()
                 sh = make_wire(edges, self.precision, check_closed=True)
                 add_wire = True
 
                 if self.style.fill_color and len(sh.Wires) == 1 and sh.Wires[0].isClosed():
-                    try:
+                    with suppress(Exception):
                         face = Face(sh)
                         if face.isValid():
                             add_wire = False
                         else:
                             face.fix(1e-6, 0, 1)
-                        if face.Area > 10 * (precision_step(self.precision)**2):
-                            # TODO add path name to facetree node                       
-                            faces.insert(face, "<insert name here>"  + "_f" + str(++cnt))
+
+                        if face.Area > 10 * (precision_step(self.precision) ** 2):
+                            faces.insert(face, f"{self.id}_f{next(cnt)}")
                         else:
                             add_wire = False
-                            
-                    except:
-                        pass
+
                 if add_wire:
-                    openShapes.append(sh)
-        faces.makeCuts()  
-        result = []      
-        for face in faces.flatten():
-            result.append(face.transformGeometry(self.transform))
-        for face in openShapes:
-            result.append(face.transformGeometry(self.transform))
-        return result
+                    open_shapes.append(sh)
+
+        faces.make_cuts()
+        shapes = chain(faces.flatten(), open_shapes)
+        return [face.transformGeometry(self.transform) for face in shapes]
+
 
 def approx_bspline(
     curve: BezierCurve,
