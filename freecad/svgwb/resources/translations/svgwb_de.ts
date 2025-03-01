@@ -83,43 +83,43 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="32"/>
-        <source>precision in coordinate calculation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../preferences.py" line="34"/>
-        <source>25,4 dpi</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../../preferences.py" line="35"/>
         <source>254 dpi</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../../preferences.py" line="32"/>
+        <source>Precision in coordinate calculation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../preferences.py" line="34"/>
+        <source>25.4 dpi</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../../preferences.py" line="36"/>
-        <source>2.540 dpi</source>
+        <source>2,540 dpi</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../preferences.py" line="37"/>
-        <source>25.400 dpi</source>
+        <source>25,400 dpi</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../preferences.py" line="38"/>
-        <source>254.000 dpi</source>
+        <source>254,000 dpi</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../preferences.py" line="39"/>
-        <source>2.540.000 dpi</source>
+        <source>2,540,000 dpi</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../preferences.py" line="40"/>
-        <source>max. dpi</source>
+        <source>Maximum dpi</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

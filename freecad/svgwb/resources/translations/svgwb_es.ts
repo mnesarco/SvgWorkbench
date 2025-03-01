@@ -105,47 +105,12 @@
     <message>
         <location filename="../../preferences.py" line="31"/>
         <source>Coordinate Resolution</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../preferences.py" line="32"/>
-        <source>precision in coordinate calculation</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../preferences.py" line="34"/>
-        <source>25,4 dpi</source>
-        <translation type="unfinished"></translation>
+        <translation>Resolución de coordenadas</translation>
     </message>
     <message>
         <location filename="../../preferences.py" line="35"/>
         <source>254 dpi</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../preferences.py" line="36"/>
-        <source>2.540 dpi</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../preferences.py" line="37"/>
-        <source>25.400 dpi</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../preferences.py" line="38"/>
-        <source>254.000 dpi</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../preferences.py" line="39"/>
-        <source>2.540.000 dpi</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../preferences.py" line="40"/>
-        <source>max. dpi</source>
-        <translation type="unfinished"></translation>
+        <translation>254 dpi</translation>
     </message>
     <message>
         <location filename="../../preferences.py" line="49"/>
@@ -204,12 +169,12 @@
     <message>
         <location filename="../../preferences.py" line="104"/>
         <source>Discretization points</source>
-        <translation type="unfinished"></translation>
+        <translation>Cantidad de puntos para aproximaciones</translation>
     </message>
     <message>
         <location filename="../../preferences.py" line="105"/>
         <source>Number of discretization points for approximated edges</source>
-        <translation type="unfinished"></translation>
+        <translation>Número de puntos para aproximar Edges si se requiere</translation>
     </message>
     <message>
         <location filename="../../preferences.py" line="123"/>
@@ -300,6 +265,41 @@
         <location filename="../../preferences.py" line="145"/>
         <source>View direction</source>
         <translation>Dirección de proyección</translation>
+    </message>
+    <message>
+        <location filename="../../preferences.py" line="32"/>
+        <source>Precision in coordinate calculation</source>
+        <translation>Precisión en cálculo de coordenadas</translation>
+    </message>
+    <message>
+        <location filename="../../preferences.py" line="34"/>
+        <source>25.4 dpi</source>
+        <translation>25,4 dpi</translation>
+    </message>
+    <message>
+        <location filename="../../preferences.py" line="36"/>
+        <source>2,540 dpi</source>
+        <translation>2.540 dpi</translation>
+    </message>
+    <message>
+        <location filename="../../preferences.py" line="37"/>
+        <source>25,400 dpi</source>
+        <translation>25.400 dpi</translation>
+    </message>
+    <message>
+        <location filename="../../preferences.py" line="38"/>
+        <source>254,000 dpi</source>
+        <translation>254.000 dpi</translation>
+    </message>
+    <message>
+        <location filename="../../preferences.py" line="39"/>
+        <source>2,540,000 dpi</source>
+        <translation>2.540.000 dpi</translation>
+    </message>
+    <message>
+        <location filename="../../preferences.py" line="40"/>
+        <source>Maximum dpi</source>
+        <translation>Máximo dpi</translation>
     </message>
     <message>
         <location filename="../../preferences.py" line="146"/>
@@ -530,27 +530,27 @@
     <message>
         <location filename="../../features/svg_action_task.py" line="83"/>
         <source>Query</source>
-        <translation type="unfinished"></translation>
+        <translation>Consulta</translation>
     </message>
     <message>
         <location filename="../../features/svg_action_task.py" line="88"/>
         <source>Filter criteria:</source>
-        <translation type="unfinished"></translation>
+        <translation>Filtro:</translation>
     </message>
     <message>
         <location filename="../../features/svg_action_task.py" line="91"/>
         <source>Filter pattern:</source>
-        <translation type="unfinished"></translation>
+        <translation>Patrón:</translation>
     </message>
     <message>
         <location filename="../../features/svg_action_task.py" line="92"/>
         <source>Filter result</source>
-        <translation type="unfinished"></translation>
+        <translation>Resultados</translation>
     </message>
     <message>
         <location filename="../../features/svg_action_task.py" line="94"/>
         <source>Output</source>
-        <translation type="unfinished"></translation>
+        <translation>Salida</translation>
     </message>
     <message>
         <location filename="../../features/svg_action_task.py" line="98"/>
