@@ -3,13 +3,6 @@
 
 from __future__ import annotations
 
-from PySide.QtCore import (  # type: ignore[attr-defined]
-    QObject,
-    QTimer,
-    Signal,
-    Qt,
-)
-
 import FreeCAD as App  # type: ignore[all]
 
 from dataclasses import dataclass
@@ -22,8 +15,23 @@ import weakref
 from .utils import ref_is_valid
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     import FreeCADGui as Gui  # type: ignore
     from pivy import coin  # type: ignore
+    from PySide6.QtCore import (  # type: ignore[attr-defined]
+        QObject,
+        QTimer,
+        Signal,
+        Qt,
+    )
+
+if not TYPE_CHECKING:
+    from PySide.QtCore import (  # type: ignore[attr-defined]
+        QObject,
+        QTimer,
+        Signal,
+        Qt,
+    )
 
 # Event timer
 # ===========
@@ -54,11 +62,13 @@ class EventSubscription:
     unsubscribe = source.subscribe(fn)
     ...
     unsubscribe()
+
     """
 
-    __slots__ = ("source", "listener", "_method_id", "__weakref__")
+    __slots__ = ("__weakref__", "_method_id", "listener", "source")
 
-    def __init__(self, listener: EventListener, source: BaseEventSource):
+    def __init__(self, listener: EventListener, source: BaseEventSource) -> None:
+        """Create a weak event subscription."""
         try:
             self.listener = weakref.WeakMethod(listener)
             self._method_id = hash(listener.__name__)
@@ -68,13 +78,12 @@ class EventSubscription:
         self.source = weakref.ref(source)
 
     def __call__(self) -> None:
+        """Unsubscribe."""
         if (listener := self.listener()) is not None and (source := self.source()) is not None:
-            try:
+            with suppress(Exception):
                 source.trigger.disconnect(listener)
-            except Exception:
-                pass  # Already disconnected, ok
 
-    def _id(self):
+    def _id(self) -> tuple[int, int]:
         return self._method_id, id(self.source)
 
     # Alias
@@ -86,7 +95,7 @@ class EventSubscriptions:
     Manage event subscriptions without duplicates.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._data = {}
 
     def __iadd__(self, subscription):
@@ -112,7 +121,7 @@ class EventSubscriptions:
 
 
 class EventSubscriptionsDescriptor:
-    def __get__(self, owner, obj_type=None):
+    def __get__(self, owner, obj_type=None) -> EventSubscriptions:
         if subscriptions := getattr(owner, self.attr_name, None):
             return subscriptions
 
@@ -120,7 +129,7 @@ class EventSubscriptionsDescriptor:
         setattr(owner, self.attr_name, subscriptions)
         return subscriptions
 
-    def __set_name__(self, cls: type, name: str):
+    def __set_name__(self, cls: type, name: str) -> None:
         self.attr_name = f"_{cls.__name__}_fcapi_subs_{name}"
 
 
@@ -131,7 +140,7 @@ class BaseEventSource(QObject):
 
     trigger = Signal(object)
 
-    def __init__(self, parent: QObject | None = None):
+    def __init__(self, parent: QObject | None = None) -> None:
         QObject.__init__(self, parent)
 
     def __call__(self, event) -> None:
@@ -149,14 +158,14 @@ class StateEventState(dict[str, Any]):
 
     disabled: bool
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.disabled = False
 
-    def disable(self):
+    def disable(self) -> None:
         self.disabled = True
 
-    def enable(self):
+    def enable(self) -> None:
         self.disabled = False
 
 
@@ -176,17 +185,17 @@ class StateEventSource(BaseEventSource):
 
     state: StateEventState
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(_event_timer)
         self.state = StateEventState()
 
 
-def state_event(*, one_shot: bool = False):
-    def deco(producer: StateEventProducer):
-        """Decorator to create custom state event producers."""
+def state_event(*, one_shot: bool = False) -> Callable[[StateEventProducer], EventDef]:
+    def deco(producer: StateEventProducer) -> EventDef:
+        """Create custom state event producers."""
         source = StateEventSource()
 
-        def timeout():
+        def timeout() -> None:
             if source.state.disabled:
                 _event_timer.timeout.disconnect(timeout)
                 return
@@ -220,11 +229,9 @@ class MethodEventListenerDescriptor:
     def __get__(self, owner, obj_type=None):
         bound_method = self.method.__get__(owner, obj_type)
         if self.one_shot:
-            def one_shot_listener(event):
-                try:
+            def one_shot_listener(event) -> None:
+                with suppress(Exception):
                     self.source.trigger.disconnect(one_shot_listener)
-                except Exception:
-                    pass # Already disconnected, ok
                 bound_method(event)
             return one_shot_listener
         return bound_method
@@ -246,13 +253,13 @@ class MethodEventListenerDescriptor:
             setattr(cls, key, {method_name: self})
             self.setup(cls, key)
 
-    def setup(self, cls, key: str):
+    def setup(self, cls: type, key: str) -> None:
         """
         Wrap cls.__init__ to inject code to connect all sources to instance methods.
         """
         obj_init = cls.__init__
 
-        def init_wrapper(self_, *args, **kwargs):
+        def init_wrapper(self_, *args, **kwargs) -> None:
             listeners: dict[str, MethodEventListenerDescriptor] = getattr(self_, key)
             for name, desc in listeners.items():
                 desc.source.subscribe(getattr(self_, name))
@@ -272,7 +279,7 @@ class EventDef:
 
     source: BaseEventSource
 
-    def __init__(self, source: BaseEventSource | None = None, one_shot: bool = False):
+    def __init__(self, source: BaseEventSource | None = None, one_shot: bool = False) -> None:
         self.source = source or BaseEventSource()
         self.one_shot = one_shot
 
@@ -283,7 +290,7 @@ class EventDef:
         if arity == 1:  # Free function
             if self.one_shot:
 
-                def _listener(event):
+                def _listener(event) -> None:
                     listener.unsubscribe()
                     listener(event)
 
@@ -291,12 +298,13 @@ class EventDef:
                 _listener = listener
             listener.unsubscribe = self.source.subscribe(_listener)
             return listener
-        raise TypeError("Listener must accept a single argument: event")
+        msg = "Listener must accept a single argument: event"
+        raise TypeError(msg)
 
     # Alias
     subscribe = __call__
 
-    def emit(self, event):
+    def emit(self, event) -> None:
         self.source(event)
 
 
@@ -308,7 +316,7 @@ class SelectionItemResult:
     pnt: tuple[float, float, float] | None = None
 
 
-class events:
+class events:  # noqa: N801
     """Namespace of builtin events."""
 
     @dataclass(slots=True)
@@ -364,7 +372,7 @@ class events:
     class GuiUpEvent:
         pass
 
-    class document:
+    class document:  # noqa: N801
         """Namespace of Document events"""
 
         created = EventDef()
@@ -380,7 +388,7 @@ class events:
         before_save = EventDef()
         saved = EventDef()
 
-    class transaction:
+    class transaction:  # noqa: N801
         """Namespace of transaction events"""
 
         open = EventDef()
@@ -389,7 +397,7 @@ class events:
         before_close = EventDef()
         closed = EventDef()
 
-    class doc_object:
+    class doc_object:  # noqa: N801
         """Namespace of document object events"""
 
         created = EventDef()
@@ -404,7 +412,9 @@ class events:
         extension_added = EventDef()
         before_adding_extension = EventDef()
 
-    class selection:
+    class selection:  # noqa: N801
+        """Selection events."""
+
         added = EventDef()
         removed = EventDef()
         clear = EventDef()
@@ -413,11 +423,12 @@ class events:
         removed_pre = EventDef()
         picked_list_changed = EventDef()
 
-    class app:
+    class app:  # noqa: N801
+        """Application events."""
+
         @state_event(one_shot=True)
-        def gui_up(state: StateEventState):
-            if App.GuiUp:
-                return events.GuiUpEvent()
+        def gui_up(state: StateEventState) -> events.GuiUpEvent | None:  # noqa: N805
+            return events.GuiUpEvent() if App.GuiUp else None
 
 
 # [FreeCAD API] SelectionObserver
@@ -426,93 +437,93 @@ class _DocumentObserver:
     Private Internal DocumentObserver implementation.
     """
 
-    def slotCreatedDocument(self, doc: App.Document):
+    def slotCreatedDocument(self, doc: App.Document) -> None:
         events.document.created.emit(events.DocumentEvent(doc))
 
-    def slotDeletedDocument(self, doc: App.Document):
+    def slotDeletedDocument(self, doc: App.Document) -> None:
         events.document.deleted.emit(events.DocumentEvent(doc))
 
-    def slotRelabelDocument(self, doc: App.Document):
+    def slotRelabelDocument(self, doc: App.Document) -> None:
         events.document.relabeled.emit(events.DocumentEvent(doc))
 
-    def slotActivateDocument(self, doc: App.Document):
+    def slotActivateDocument(self, doc: App.Document) -> None:
         events.document.activated.emit(events.DocumentEvent(doc))
 
-    def slotRecomputedDocument(self, doc: App.Document):
+    def slotRecomputedDocument(self, doc: App.Document) -> None:
         events.document.recomputed.emit(events.DocumentEvent(doc))
 
-    def slotBeforeRecomputeDocument(self, doc: App.Document):
+    def slotBeforeRecomputeDocument(self, doc: App.Document) -> None:
         events.document.before_recompute.emit(events.DocumentEvent(doc))
 
-    def slotUndoDocument(self, doc: App.Document):
+    def slotUndoDocument(self, doc: App.Document) -> None:
         events.document.undo.emit(events.DocumentEvent(doc))
 
-    def slotRedoDocument(self, doc: App.Document):
+    def slotRedoDocument(self, doc: App.Document) -> None:
         events.document.redo.emit(events.DocumentEvent(doc))
 
-    def slotChangedDocument(self, doc: App.Document, prop: str):
+    def slotChangedDocument(self, doc: App.Document, prop: str) -> None:
         events.document.changed.emit(events.DocumentPropertyEvent(doc, prop))
 
-    def slotBeforeChangeDocument(self, doc: App.Document, prop: str):
+    def slotBeforeChangeDocument(self, doc: App.Document, prop: str) -> None:
         events.document.before_change.emit(events.DocumentPropertyEvent(doc, prop))
 
-    def slotStartSaveDocument(self, doc: App.Document, path: str):
+    def slotStartSaveDocument(self, doc: App.Document, path: str) -> None:
         events.document.before_save.emit(events.DocumentSaveEvent(doc, path))
 
-    def slotFinishSaveDocument(self, doc: App.Document, path: str):
+    def slotFinishSaveDocument(self, doc: App.Document, path: str) -> None:
         events.document.saved.emit(events.DocumentSaveEvent(doc, path))
 
     # --- Transaction
 
-    def slotOpenTransaction(self, doc: App.Document, name: str):
+    def slotOpenTransaction(self, doc: App.Document, name: str) -> None:
         events.transaction.open.emit(events.TransactionEvent(doc, name))
 
-    def slotCommitTransaction(self, doc: App.Document):
+    def slotCommitTransaction(self, doc: App.Document) -> None:
         events.transaction.commit.emit(events.TransactionEvent(doc))
 
-    def slotAbortTransaction(self, doc: App.Document):
+    def slotAbortTransaction(self, doc: App.Document) -> None:
         events.transaction.abort.emit(events.TransactionEvent(doc))
 
-    def slotBeforeCloseTransaction(self, doc: App.Document):
+    def slotBeforeCloseTransaction(self, doc: App.Document) -> None:
         events.transaction.before_close.emit(events.TransactionEvent(doc))
 
-    def slotCloseTransaction(self, doc: App.Document):
+    def slotCloseTransaction(self, doc: App.Document) -> None:
         events.transaction.closed.emit(events.TransactionEvent(doc))
 
     # --- DocumentObject
 
-    def slotCreatedObject(self, obj: App.DocumentObject):
+    def slotCreatedObject(self, obj: App.DocumentObject) -> None:
         events.doc_object.created.emit(events.DocumentObjectEvent(obj))
 
-    def slotDeletedObject(self, obj: App.DocumentObject):
+    def slotDeletedObject(self, obj: App.DocumentObject) -> None:
         events.doc_object.deleted.emit(events.DocumentObjectEvent(obj))
 
-    def slotChangedObject(self, obj: App.DocumentObject, prop: str):
+    def slotChangedObject(self, obj: App.DocumentObject, prop: str) -> None:
         events.doc_object.changed.emit(events.DocumentObjectPropertyEvent(obj, prop))
 
-    def slotBeforeChangeObject(self, obj: App.DocumentObject, prop: str):
+    def slotBeforeChangeObject(self, obj: App.DocumentObject, prop: str) -> None:
         events.doc_object.before_change.emit(events.DocumentObjectPropertyEvent(obj, prop))
 
-    def slotRecomputedObject(self, obj: App.DocumentObject):
+    def slotRecomputedObject(self, obj: App.DocumentObject) -> None:
         events.doc_object.recomputed.emit(events.DocumentObjectEvent(obj))
 
-    def slotAppendDynamicProperty(self, obj: App.DocumentObject, prop: str):
+    def slotAppendDynamicProperty(self, obj: App.DocumentObject, prop: str) -> None:
         events.doc_object.property_added.emit(events.DocumentObjectPropertyEvent(obj, prop))
 
-    def slotRemoveDynamicProperty(self, obj: App.DocumentObject, prop: str):
+    def slotRemoveDynamicProperty(self, obj: App.DocumentObject, prop: str) -> None:
         events.doc_object.property_removed.emit(events.DocumentObjectPropertyEvent(obj, prop))
 
-    def slotChangePropertyEditor(self, obj: App.DocumentObject, prop: str):
+    def slotChangePropertyEditor(self, obj: App.DocumentObject, prop: str) -> None:
         events.doc_object.property_editor_changed.emit(
-            events.DocumentObjectPropertyEvent(obj, prop)
+            events.DocumentObjectPropertyEvent(obj, prop),
         )
 
-    def slotBeforeAddingDynamicExtension(self, obj: App.DocumentObject, extension: str):
+    def slotBeforeAddingDynamicExtension(self, obj: App.DocumentObject, extension: str) -> None:
         events.doc_object.before_adding_extension.emit(
-            events.DocumentObjectExtensionEvent(obj, extension)
+            events.DocumentObjectExtensionEvent(obj, extension),
         )
 
-    def slotAddedDynamicExtension(self, obj: App.DocumentObject, extension: str):
+    def slotAddedDynamicExtension(self, obj: App.DocumentObject, extension: str) -> None:
         events.doc_object.extension_added.emit(events.DocumentObjectExtensionEvent(obj, extension))
 
 
@@ -522,25 +533,25 @@ class _SelectionObserver:
     Private Internal SelectionObserver implementation.
     """
 
-    def setPreselection(self, doc: str, obj: str, sub: str):
+    def setPreselection(self, doc: str, obj: str, sub: str) -> None:
         events.selection.set_pre.emit(events.SelectionEvent(doc, obj, sub))
 
-    def addSelection(self, doc: str, obj: str, sub: str, pnt: tuple[float, float, float]):
+    def addSelection(self, doc: str, obj: str, sub: str, pnt: tuple[float, float, float]) -> None:
         events.selection.added.emit(events.SelectionEvent(doc, obj, sub, pnt))
 
-    def removeSelection(self, doc: str, obj: str, sub: str):
+    def removeSelection(self, doc: str, obj: str, sub: str) -> None:
         events.selection.removed.emit(events.SelectionEvent(doc, obj, sub))
 
-    def setSelection(self, doc: str):
+    def setSelection(self, doc: str) -> None:
         events.selection.set.emit(events.SelectionEvent(doc))
 
-    def clearSelection(self, doc: str):
+    def clearSelection(self, doc: str) -> None:
         events.selection.clear.emit(events.SelectionEvent(doc))
 
-    def pickedListChanged(self, *_args):
+    def pickedListChanged(self, *_args) -> None:
         events.selection.picked_list_changed.emit(events.SelectionEvent())
 
-    def removePreselection(self, doc: str, obj: str, sub: str):
+    def removePreselection(self, doc: str, obj: str, sub: str) -> None:
         events.selection.removed_pre.emit(events.SelectionEvent(doc, obj, sub))
 
 
@@ -549,16 +560,16 @@ class ViewCallback:
     Callback attachable to view events for: DraggerCallback, EventCallback, EventCallbackPivy
     """
 
-    __slots__ = ("event", "callback", "view", "dragger", "_method_id", "__weakref__")
+    __slots__ = ("__weakref__", "_method_id", "callback", "dragger", "event", "view")
 
-    def __init__(self, event: str | coin.SoType, callback: callable, method_id: int):
+    def __init__(self, event: str | coin.SoType, callback: callable, method_id: int) -> None:
         self.event = event
         self.callback = callback
         self.view: Gui.View3DInventorPy | None = None
         self.dragger = None
         self._method_id = method_id
 
-    def _attach_dragger(self, view: Gui.View3DInventorPy, dragger=None):
+    def _attach_dragger(self, view: Gui.View3DInventorPy, dragger=None) -> None:
         view.addDraggerCallback(dragger, self.event, self.callback)
         self.dragger = dragger
 
@@ -576,7 +587,7 @@ class ViewCallback:
         self.view = view
         return self
 
-    def detach(self, view: Gui.View3DInventorPy | None = None, dragger=None):
+    def detach(self, view: Gui.View3DInventorPy | None = None, dragger=None) -> None:
         if dragger and not view:
             msg = "If dragger is passed, view must be passed too."
             raise ValueError(msg)
@@ -602,19 +613,19 @@ class ViewCallback:
                     self.view = None
                     self.dragger = None
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> None:
         self.callback(*args, **kwargs)
 
-    def _id(self):
+    def _id(self) -> tuple[int, int, int, str]:
         return self._method_id, id(self.view), id(self.dragger), self.event
 
 
 class ViewCallbackDescriptor:
-    def __init__(self, method: callable, event: str | coin.SoType):
+    def __init__(self, method: callable, event: str | coin.SoType) -> None:
         self.method = method
         self.event = event
 
-    def __get__(self, owner, obj_type=None):
+    def __get__(self, owner, obj_type=None) -> ViewCallback:
         bound_method = self.method.__get__(owner, obj_type)
         return ViewCallback(self.event, bound_method, id(self.method))
 
@@ -622,10 +633,10 @@ class ViewCallbackDescriptor:
 class view_callback:
     """Decorator to configure a method as a view event callback."""
 
-    def __init__(self, event: str | coin.SoType):
+    def __init__(self, event: str | coin.SoType) -> None:
         self.event = event
 
-    def __call__(self, callback: callable):
+    def __call__(self, callback: callable) -> ViewCallbackDescriptor:
         return ViewCallbackDescriptor(callback, self.event)
 
 
@@ -635,8 +646,8 @@ App.addDocumentObserver(_DocumentObserver())
 
 # Lazy install of Selection Observer Singleton
 @events.app.gui_up
-def on_gui(event):
+def on_gui(_event: events.GuiUpEvent) -> None:
     App.Gui.Selection.addObserver(
         _SelectionObserver(),
-        # App.Gui.Selection.ResolveMode.NewStyleElement,
+        App.Gui.Selection.ResolveMode.NoResolve,
     )
