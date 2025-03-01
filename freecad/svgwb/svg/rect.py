@@ -10,7 +10,7 @@ from Part import Shape, LineSegment, Wire, Ellipse, Arc, Face  # type: ignore
 from DraftVecUtils import equals  # type: ignore
 
 from .shape import SvgShape
-from .geom import precision
+from .geom import precision_step
 from .cache import cached_copy
 import math
 
@@ -23,6 +23,7 @@ class SvgRect(SvgShape):
     height: float
     rx: float
     ry: float
+    precision : int
 
     def rounded_edges(self) -> list[Shape]:
         max_rx = self.width / 2.0
@@ -35,7 +36,7 @@ class SvgRect(SvgShape):
         if ry > max_ry:
             ry = max_ry
 
-        _precision = precision()
+        _precision = precision_step(self.precision)
         if rx < _precision or ry < _precision:
             return self.straight_edges()
 

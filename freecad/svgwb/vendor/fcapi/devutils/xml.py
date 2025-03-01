@@ -7,8 +7,8 @@ from .utils import BoolFlag
 
 def update_elem_text(node: ET.Element, find: str, text: str, create: bool = False):
     flag = BoolFlag()
-    for node in node.iterfind(find):
-        node.text = text
+    for child in node.iterfind(find):
+        child.text = text
         flag()
     if not flag and create:
         add_element(node, find.split("/")[-1], text)

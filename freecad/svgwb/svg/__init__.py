@@ -2,7 +2,5 @@
 # (c) 2025 Frank David Martínez Muñoz. <mnesarco at gmail.com>
 
 """
-Svg Workbench for FreeCAD
+Svg Parsers.
 """
-
-__version__ = "1.0.0.dev1"  # <fcapi:sync-version>

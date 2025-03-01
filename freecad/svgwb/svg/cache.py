@@ -3,22 +3,22 @@
 
 from __future__ import annotations
 
-from functools import cached_property  # noqa: F401
-from typing import TYPE_CHECKING
+from functools import cached_property, wraps  # noqa: F401
+from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from Part import Shape  # type: ignore
 
 CACHE_MISS = object()
+T = TypeVar("T")
 
 
-def cached_copy(fn):
-    """
-    Returns a copy of the cached Shape.
-    """
+def cached_copy(fn: T) -> T:
+    """Return a copy of the cached Shape."""
     attr = f"_cached_{fn.__name__}"
 
-    def getter(self, *args, **kwargs) -> Shape | None:
+    @wraps(fn)
+    def getter(self, *args, **kwargs) -> Shape | None:  # noqa: ANN001
         cache = getattr(self, attr, CACHE_MISS)
         if cache is None:
             return None
@@ -31,13 +31,12 @@ def cached_copy(fn):
     return getter
 
 
-def cached_copy_list(fn):
-    """
-    Return a list of copies of the cached Shapes.
-    """
+def cached_copy_list(fn: T) -> T:
+    """Return a list of copies of the cached Shapes."""
     attr = f"_cached_{fn.__name__}"
 
-    def getter(self, *args, **kwargs) -> list[Shape]:
+    @wraps(fn)
+    def getter(self, *args, **kwargs) -> list[Shape]:  # noqa: ANN001
         cache = getattr(self, attr, CACHE_MISS)
         if cache is None:
             return []
