@@ -17,6 +17,8 @@ import FreeCAD as App  # type: ignore
     icon=resources.icon("add-svg-db.svg"),
 )
 class NewSvgFileObject:
+    """Create an svg source form an external svg file"""
+
     def on_activated(self) -> None:
         from ..features.svg_file import SvgFileFeature
         from ..vendor.fcapi import fcui as ui

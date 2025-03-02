@@ -10,14 +10,14 @@ from functools import total_ordering
 translate = App.Qt.translate
 
 
-def QT_TRANSLATE_NOOP(context, text):
-    """This function does not translate the text but make it ready for translation"""
+def QT_TRANSLATE_NOOP(_context: str, text: str) -> str:
+    """This function does not translate the text but make it ready for translation"""  # noqa: D401, D404
     return text
 
 
 @total_ordering
 @dataclass(slots=True, repr=False, eq=False)
-class dtr:
+class dtr:  # noqa: N801
     """Deferred translation. Translated when converted to str"""
 
     context: str
@@ -28,7 +28,7 @@ class dtr:
     _stable_hash: int = field(init=False)
     _as_tuple: ClassVar = operator.attrgetter("context", "source", "disambiguation", "num")
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self._stable_hash = hash(dtr._as_tuple(self))
 
     def __repr__(self) -> str:
@@ -36,16 +36,16 @@ class dtr:
 
     __str__ = __repr__
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, str):
             return str(self) == other or self.source == other
         try:
             return dtr._as_tuple(self) == dtr._as_tuple(other)
-        except Exception:
+        except Exception:  # noqa: BLE001
             return False
 
-    def __lt__(self, other):
+    def __lt__(self, other: object) -> bool:
         return str(self) < str(other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self._stable_hash

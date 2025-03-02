@@ -1,6 +1,8 @@
 # SPDX-License: LGPL-3.0-or-later
 # (c) 2024 Frank David Martínez Muñoz. <mnesarco at gmail.com>
 
+# ruff: noqa: N801, A001
+
 from __future__ import annotations
 
 from functools import cached_property
@@ -9,30 +11,32 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from itertools import filterfalse
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Protocol, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar, ClassVar
 from collections import defaultdict
+import contextlib
 
 import FreeCAD as App  # type: ignore
 
 from .events import events
-from .fpo import Preference, PreferencePreset, Preferences, _is  # noqa: F401
+from .fpo import Preference, PreferencePreset, Preferences, _is
 from .lang import dtr, translate
 
 from PySide.QtCore import QObject  # type: ignore
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from . import fcui as ui
 
     class PrefWidget(ui.QWidget, Protocol):
+        """Preference editor widget"""
+
         _label: ui.QWidget
 
         def value(self) -> Any: ...
         def setValue(self, value: Any) -> None: ...
 
-    from PySide6.QtCore import QObject
-
-    GuiElementType = Union[str, type]
-    GuiElement = Union[Preference, str, dtr, ui.QWidget, tuple[Preference, GuiElementType], None]
+    GuiElementType = str | type
+    GuiElement = Preference | str | dtr | ui.QWidget | tuple[Preference, GuiElementType] | None
 
 
 class PreferencesPage(ABC):
@@ -53,7 +57,8 @@ class PreferencesPageInstaller:
     Create the FreeCAD PreferencesPage class and install it.
     """
 
-    def __init__(self, group: str, impl: type[PreferencesPage]):
+    def __init__(self, group: str, impl: type[PreferencesPage]) -> None:
+        """Create the FreeCAD PreferencesPage"""
         self.group: str = group
         self.impl: type[PreferencesPage] = impl
         self.installed: bool = False
@@ -64,7 +69,8 @@ class PreferencesPageInstaller:
 
         if not App.GuiUp:
             App.Console.PrintError(
-                f"Installing preferences page: {self.group}/{self.impl.__qualname__} while Gui not ready\n"
+                f"Installing preferences page: {self.group}/{self.impl.__qualname__} "
+                "while Gui is not ready\n",
             )
             return False
 
@@ -72,14 +78,14 @@ class PreferencesPageInstaller:
 
         # [FreeCAD API] PreferencesPage
         class PreferencesPageImpl:
-            def __init__(self, parent=None):
+            def __init__(self, _parent=None) -> None:
                 self._impl = impl()
                 self.form = self._impl.build()
 
-            def saveSettings(self):
+            def saveSettings(self) -> None:
                 self._impl.on_save()
 
-            def loadSettings(self):
+            def loadSettings(self) -> None:
                 self._impl.on_load()
 
         App.Console.PrintLog(f"Installing preferences page: {impl.__qualname__}\n")
@@ -92,7 +98,7 @@ class PreferencesPageInstaller:
         return self.installed
 
 
-def preferences_page(*, group: str):
+def preferences_page(*, group: str) -> Callable[[type[PreferencesPage]], PreferencesPageInstaller]:
     """
     Decorator to make a PreferencesPage installable in FreeCAD
     """
@@ -101,6 +107,10 @@ def preferences_page(*, group: str):
         return PreferencesPageInstaller(group, page_class)
 
     return deco
+
+
+class InvalidPreferenceTypeError(Exception):
+    """Preference type does not have an associated editor widget"""
 
 
 def pref_widget(
@@ -131,13 +141,13 @@ def pref_widget(
                 add=add,
                 toolTip=str(pref.description),
             )
-        else:
-            return builder(
-                value=_parser(pref()),
-                label=f"{pref.label}:",
-                add=add,
-                toolTip=str(pref.description),
-            )
+
+        return builder(
+            value=_parser(pref()),
+            label=f"{pref.label}:",
+            add=add,
+            toolTip=str(pref.description),
+        )
 
     if pref.options:
         return ui.InputOptions(
@@ -190,6 +200,9 @@ def pref_widget(
             toolTip=str(pref.description),
         )
 
+    msg = f"Preference type {pref.value_type} does not have an associated editor widget"
+    raise InvalidPreferenceTypeError(msg)
+
 
 @dataclass
 class _ValidationError(Exception):
@@ -212,7 +225,7 @@ class AutoGui(QObject):
         self,
         title: str | dtr,
         elements: Callable[[], list[GuiElement]] | list[GuiElement],
-    ):
+    ) -> None:
         from . import fcui as ui
 
         super().__init__()
@@ -221,9 +234,9 @@ class AutoGui(QObject):
         widgets: list[tuple[PrefWidget, PreferencePreset]] = []
         sections: list[tuple[ui.QGroupBox, dtr | str]] = []
 
-        with ui.Container(windowTitle=str(title), contentsMargins=(0,0,0,0)) as form:
+        with ui.Container(windowTitle=str(title), contentsMargins=(0, 0, 0, 0)) as form:
             selector = PresetSelector(items, widgets)
-            with ui.GroupBox(contentsMargins=(0,0,0,0)):
+            with ui.GroupBox(contentsMargins=(0, 0, 0, 0)):
                 section: ui.GroupBox = None
                 for item in items:
                     if isinstance(item, Preference):
@@ -255,7 +268,7 @@ class AutoGui(QObject):
         self.widgets = widgets
         self.sections = sections
 
-    def apply_translations(self):
+    def apply_translations(self) -> None:
         from . import fcui as ui
 
         self.form.setWindowTitle(str(self.title))
@@ -281,15 +294,13 @@ class AutoGui(QObject):
         if self.container:
             self.container.setWindowTitle(str(self.title))
 
-    def load(self):
+    def load(self) -> None:
         self.selector.on_preset_change()
 
-    def validate(self):
-        for widget, pref in self.widgets:
-            try:
-                widget._label.clearNotification()
-            except AttributeError:
-                pass
+    def validate(self) -> None:
+        for widget, _pref in self.widgets:
+            with contextlib.suppress(AttributeError):
+                widget._label.clearNotification()  # noqa: SLF001
 
         messages = []
         for widget, pref in self.widgets:
@@ -297,21 +308,20 @@ class AutoGui(QObject):
             if validators := pref.preference.ui_validators:
                 for v in validators:
                     if msg := v.validate(value):
-                        try:
-                            widget._label.setNotification("dialog-warning", msg)
-                        except AttributeError:
-                            pass
+                        with contextlib.suppress(AttributeError):
+                            widget._label.setNotification("dialog-warning", msg)  # noqa: SLF001
                         messages.append(f"{pref.preference.label}: {msg}")
+
         if messages:
             raise _ValidationError("\n".join(messages))
 
-    def save_as(self, new_preset: str):
+    def save_as(self, new_preset: str) -> None:
         for widget, pref in self.widgets:
             target = pref.preference.preset(new_preset)
             target(update=widget.value())
         self.selector.input.addOption(new_preset, new_preset)
 
-    def delete(self, preset: str):
+    def delete(self, preset: str) -> None:
         groups = set()
         for _, pref in self.widgets:
             groups.add(pref.preference.group_key)
@@ -320,12 +330,12 @@ class AutoGui(QObject):
                 param.RemGroup(preset)
         self.selector.input.removeOption(preset)
 
-    def update_preset_list(self, selected: str | None = None):
+    def update_preset_list(self, selected: str | None = None) -> None:
         if not selected:
             selected = next(iter(self.selector.input.values()))
         self.selector.selected = selected
 
-    def save(self):
+    def save(self) -> None:
         action = self.selector.action
         preset = self.selector.selected
         new_preset = self.selector.new_name
@@ -381,14 +391,14 @@ class PresetSelector:
     preferences: list[Preference]
     widgets: list[tuple[PrefWidget, PreferencePreset]]
 
-    action_options = {
+    action_options: ClassVar[dict[dtr, str]] = {
         dtr("Preferences", "Preset action:"): "none",
         dtr("Preferences", "Save preset as:"): "save_as",
         dtr("Preferences", "Rename preset to:"): "rename",
         dtr("Preferences", "Delete preset:"): "delete",
     }
 
-    def __init__(self, items: list, widgets: list[tuple[PrefWidget, PreferencePreset]]):
+    def __init__(self, items: list, widgets: list[tuple[PrefWidget, PreferencePreset]]) -> None:
         from . import fcui as ui
 
         self.preferences = list(filter(_is(Preference), items))
@@ -412,14 +422,14 @@ class PresetSelector:
         else:
             self.input.setValue("Default")
 
-    def apply_translations(self):
-        self.input._label.setText(translate("Preferences", "Preset:"))
+    def apply_translations(self) -> None:
+        self.input._label.setText(translate("Preferences", "Preset:"))  # noqa: SLF001
         actions = self.actions
-        for i, (text, val) in enumerate(self.action_options.items()):
+        for i, (text, _val) in enumerate(self.action_options.items()):
             actions.setItemText(i, str(text))
         self.on_action_change()
 
-    def on_action_change(self, *_):
+    def on_action_change(self, *_) -> None:
         from .fcui import set_indicator_icon
 
         preset = self.input.value()
@@ -454,7 +464,7 @@ class PresetSelector:
             set_indicator_icon(name_input, "dialog-warning")
             name_input.repaint()
 
-    def on_preset_change(self, *_):
+    def on_preset_change(self, *_) -> None:
         selected = self.input.value()
         if selected is None:
             self.input.setValue("Default")
@@ -468,7 +478,7 @@ class PresetSelector:
             w.setValue(preset())
 
     def preset_names(self) -> list[str]:
-        presets: set[str] = set(["Default"])
+        presets: set[str] = {"Default"}
         update = presets.update
         for p in self.preferences:
             update(p.preset_names())
@@ -479,7 +489,7 @@ class PresetSelector:
         return self.input.value()
 
     @selected.setter
-    def selected(self, value: str):
+    def selected(self, value: str) -> None:
         self.input.setValue(value)
         self.actions.setValue("none")
 
@@ -497,7 +507,7 @@ class PresetSelector:
         return self.actions.setValue(value)
 
 
-def setup_validators(widget, pref: Preference):
+def setup_validators(widget: object, pref: Preference) -> None:
     """Enhance widgets with validation constraints if possible"""
     if validators := pref.ui_validators:
         for v in validators:
@@ -515,17 +525,17 @@ def make_preferences_page(
     """
 
     class Page(PreferencesPage):
-        def build(self):
+        def build(self) -> ui.QWidget:
             if (gui := getattr(self, "gui", None)) is None:
                 gui = AutoGui(title, elements)
                 self.gui = gui
             return gui.form
 
-        def on_load(self):
+        def on_load(self) -> None:
             App.Console.PrintLog(f"Loading preferences: {group}/{title}\n")
             self.gui.load()
 
-        def on_save(self):
+        def on_save(self) -> None:
             try:
                 self.gui.save()
                 App.Console.PrintLog(f"Saved preferences: {group}/{title}\n")
@@ -544,13 +554,17 @@ def basic_preferences_page(*, group: str, title: str | dtr):
     Decorator to take a list of GuiElements returned from a function and build a Page.
     """
 
-    def deco(elements: Callable[[], list[GuiElement]] | list[GuiElement]):
+    def deco(
+        elements: Callable[[], list[GuiElement]] | list[GuiElement],
+    ) -> PreferencesPageInstaller:
         page = make_preferences_page(group=group, title=title, elements=elements)
         return preferences_page(group=group)(page)
 
     return deco
 
+
 _P = TypeVar("_P")
+
 
 class auto_gui:
     """
@@ -563,7 +577,8 @@ class auto_gui:
         default_ui_group: str,
         default_ui_page: str | dtr,
         install: bool = True,
-    ):
+    ) -> None:
+        """Generate and install PreferencePages in main FreeCAD Preferences editor"""
         self.cls = None
         self.default_ui_group = default_ui_group
         self.default_ui_page = default_ui_page
@@ -589,6 +604,7 @@ class auto_gui:
     def ui_groups(self) -> dict[str, dict[str, list[Any]]]:
         """
         Build the structure with all groups, pages, sections, and preferences.
+
         Assign ui_group and ui_page values if missing to be ready to sort correctly.
         ui_group and ui_page are inherited from the previous declared preference.
         default_ui_group and default_ui_page are used if not previous one.
@@ -637,11 +653,11 @@ class auto_gui:
         gui = defaultdict(list)
         for group, pages in self.ui_groups.items():
             for page, items in pages.items():
-                gui[group].append(lambda: AutoGui(page, items))
+                gui[group].append(lambda p=page, i=items: AutoGui(p, i))
         return gui
 
     @events.app.gui_up
-    def on_gui(self, _event):
+    def on_gui(self, _event) -> None:
         """Install pages when GUI is ready"""
         if self.install and not self.installed:
             self.installed = True
@@ -652,8 +668,12 @@ class auto_gui:
 
 
 class validators:
+    """Namespace of validators."""
+
     class min:
-        def __init__(self, limit: float, excluded: bool = False):
+        """Validate minimum value"""
+
+        def __init__(self, limit: float, *, excluded: bool = False) -> None:
             self.limit = limit
             if excluded:
                 self.op = operator.le
@@ -662,18 +682,20 @@ class validators:
                 self.op = operator.lt
                 self.sym = ">="
 
-        def setup(self, ui):
-            if setter := getattr(ui, "setMinimum"):
+        def setup(self, ui: object) -> None:
+            if setter := getattr(ui, "setMinimum", None):
                 setter(self.limit)
 
-        def validate(self, value):
+        def validate(self, value: Any) -> str | None:
             if value is not None and self.op(value, self.limit):
-                return translate("Validation", "Minimum accepted value is {} {}").format(
-                    self.sym, self.limit
-                )
+                msg = translate("Validation", "Minimum accepted value is {} {}")
+                return msg.format(self.sym, self.limit)
+            return None
 
     class max:
-        def __init__(self, limit: float, excluded: bool = False):
+        """Validate maximum value"""
+
+        def __init__(self, limit: float, *, excluded: bool = False) -> None:
             self.limit = limit
             if excluded:
                 self.op = operator.ge
@@ -682,61 +704,75 @@ class validators:
                 self.op = operator.gt
                 self.sym = "<="
 
-        def setup(self, ui):
-            if setter := getattr(ui, "setMaximum"):
+        def setup(self, ui: object) -> None:
+            if setter := getattr(ui, "setMaximum", None):
                 setter(self.limit)
 
-        def validate(self, value):
+        def validate(self, value: Any) -> str | None:
             if value is not None and self.op(value, self.limit):
-                return translate("Validation", "Maximum accepted value is {} {}").format(
-                    self.sym, self.limit
-                )
+                msg = translate("Validation", "Maximum accepted value is {} {}")
+                return msg.format(self.sym, self.limit)
+            return None
 
     class max_length:
-        def __init__(self, limit: int):
+        """Validate maximum length"""
+
+        def __init__(self, limit: int) -> None:
             self.limit = limit
 
-        def setup(self, ui):
-            if setter := getattr(ui, "setMaxLength"):
+        def setup(self, ui: object) -> None:
+            if setter := getattr(ui, "setMaxLength", None):
                 setter(self.limit)
 
-        def validate(self, value):
+        def validate(self, value: Any) -> str | None:
             if value and len(value) > self.limit:
-                return translate("Validation", "Maximum accepted length is {}").format(self.limit)
+                msg = translate("Validation", "Maximum accepted length is {}")
+                return msg.format(self.limit)
+            return None
 
     class min_length:
-        def __init__(self, limit: int):
+        """Validate minimum length"""
+
+        def __init__(self, limit: int) -> None:
             self.limit = limit
 
-        def setup(self, ui):
+        def setup(self, _ui: object) -> None:
             pass
 
-        def validate(self, value):
+        def validate(self, value: Any) -> str | None:
             if not value or len(value) < self.limit:
-                return translate("Validation", "Minimum accepted length is {}").format(self.limit)
+                msg = translate("Validation", "Minimum accepted length is {}")
+                return msg.format(self.limit)
+            return None
 
     class required:
-        def setup(self, ui):
+        """Validate required value"""
+
+        def setup(self, ui: object) -> None:
             pass
 
-        def validate(self, value):
+        def validate(self, value: Any) -> str | None:
             if value is None or str(value).strip() == "":
                 return translate("Validation", "Required")
+            return None
 
     class regex:
-        def __init__(self, pattern: str):
+        """Validate string value by regex"""
+
+        def __init__(self, pattern: str) -> None:
             import re
 
             self.re = re.compile(pattern)
 
-        def setup(self, ui):
+        def setup(self, _ui: object) -> None:
             pass
 
-        def validate(self, value: str):
+        def validate(self, value: str) -> None | str:
             if not value:
-                return
+                return None
             if self.re.fullmatch(value) is None:
                 return translate("Validation", "Invalid format")
+            return None
 
     positive = min(limit=0.0, excluded=True)
     negative = max(limit=0.0, excluded=True)

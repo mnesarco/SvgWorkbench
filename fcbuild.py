@@ -2,8 +2,9 @@
 # (c) 2025 Frank David Martínez Muñoz. <mnesarco at gmail.com>
 
 import importlib
-from rich import print
+from rich import print  # noqa: A004
 from pathlib import Path
+import sys
 
 
 # ----------------------------------------------------
@@ -13,7 +14,7 @@ cwd = Path(__file__).parent
 paths = list(cwd.glob("**/vendor/fcapi/devutils/build.py"))
 if not paths:
     print("[red]fcapi.devutils not found")
-    quit(1)
+    sys.exit(1)
 
 # ----------------------------------------------------
 # Dynamically import vendored freecad.*.vendor.fcapi.devutils

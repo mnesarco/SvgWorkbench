@@ -1,12 +1,16 @@
 # SPDX-License: LGPL-3.0-or-later
 # (c) 2024 Frank David Martínez Muñoz. <mnesarco at gmail.com>
 
-from typing import Protocol, Callable, Iterable
+from __future__ import annotations
+
+from typing import Any, Protocol, TYPE_CHECKING
 import FreeCAD as App  # type: ignore
 from enum import Enum
-import types
+from types import FunctionType
 
-from .lang import dtr
+if TYPE_CHECKING:
+    from .lang import dtr
+    from collections.abc import Callable, Iterable
 
 
 class Command:
@@ -16,13 +20,14 @@ class Command:
 
     name: str
     _installed: bool
+    _impl: Any
 
-    def __init__(self, impl, name: str):
+    def __init__(self, impl: Any, name: str) -> None:
         self._impl = impl
         self.name = name
         self._installed = False
 
-    def install(self):
+    def install(self) -> None:
         if self._installed:
             return
 
@@ -33,7 +38,7 @@ class Command:
         App.Gui.addCommand(self.name, self._impl)
         self._installed = True
 
-    def __call__(self, item: int = 0):
+    def __call__(self, item: int = 0) -> None:
         if not self._installed:
             msg = f"Command {self.name} is defined but not installed yet."
             raise RuntimeError(msg)
@@ -43,7 +48,7 @@ class Command:
     # Command is callable, so it can be used as cmd(), but also can be called as cmd.run()
     run = __call__
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -52,12 +57,14 @@ class CommandProtocol(Protocol):
     Class based commands protocol. All methods are optional.
     """
 
-    def on_init(self): ...
-    def on_activated(self, checked: bool | None = False): ...
-    def is_active(self): ...
+    def on_init(self) -> None: ...
+    def on_activated(self, checked: bool | None = False) -> None: ...  # noqa: FBT002
+    def is_active(self) -> bool: ...
 
 
 class CommandType(Enum):
+    """Command type ([FreeCAD API])"""
+
     AlterDoc = "AlterDoc"
     Alter3DView = "Alter3DView"
     AlterSelection = "AlterSelection"
@@ -66,11 +73,13 @@ class CommandType(Enum):
 
 
 class CommandRegistry:
+    """Registry of commands"""
+
     _prefix: str
     _commands: dict[str, Command]
     _installed: bool
 
-    def __init__(self, prefix: str = ""):
+    def __init__(self, prefix: str = "") -> None:
         self._prefix = prefix
         self._commands = {}
         self._installed = False
@@ -107,11 +116,11 @@ class CommandRegistry:
         transaction: str | dtr | None = None,
         progress: str | dtr | None = None,
     ) -> Callable[[type], Command]:
-        def deco(class_or_function: type | types.FunctionType) -> Command:
-            if isinstance(class_or_function, types.FunctionType):
+        def deco(class_or_function: type | FunctionType) -> Command:
+            if isinstance(class_or_function, FunctionType):
 
                 class cls:
-                    def on_activated(self, *args):
+                    def on_activated(self, *args) -> None:
                         class_or_function(*args)
 
                 name_suffix = name or class_or_function.__name__
@@ -123,7 +132,7 @@ class CommandRegistry:
 
             # [FreeCAD API] PythonCommand
             class PythonCommandImpl:
-                def __init__(self):
+                def __init__(self) -> None:
                     self._impl = cls()
                     self.name = fq_name
 
@@ -166,7 +175,7 @@ class CommandRegistry:
                     if in_transaction:
                         doc.commitTransaction()
 
-                def ActivatedProgress(self, *args):
+                def ActivatedProgress(self, *args) -> None:
                     from . import fcui as ui
 
                     if progress:
@@ -196,7 +205,7 @@ class CommandRegistry:
 
                 if help_url:
 
-                    def CmdHelpURL(self):
+                    def CmdHelpURL(self) -> str | None:
                         return help_url
 
             command = Command(PythonCommandImpl(), fq_name)

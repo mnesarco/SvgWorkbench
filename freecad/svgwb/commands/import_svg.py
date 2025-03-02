@@ -16,7 +16,8 @@ import FreeCAD as App  # type: ignore
     icon=resources.icon("import_svg.svg"),
     transaction=dtr("SvgWB", "Import svg file"),
 )
-def ImportSvg():
+def ImportSvg() -> None:
+    """Import an svg file into the document."""
     from pathlib import Path
     from ..preferences import SvgImportPreferences
     from ..vendor.fcapi import fcui as ui
@@ -31,10 +32,10 @@ def ImportSvg():
     if not svg_file or not Path(svg_file).exists():
         return
 
-    def execute():
+    def execute() -> None:
         try:
             dialog.page.save()
-        except Exception as ex:
+        except Exception as ex:  # noqa: BLE001
             ui.show_error(ex.args[0])
             return
 

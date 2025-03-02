@@ -1,6 +1,8 @@
 # SPDX-License: LGPL-3.0-or-later
 # (c) 2024 Frank David Martínez Muñoz. <mnesarco at gmail.com>
 
+# ruff: noqa: D106
+
 from __future__ import annotations
 
 import FreeCAD as App  # type: ignore[all]
@@ -108,13 +110,13 @@ class EventSubscriptions:
             self._data[_id] = subscription
         return self
 
-    def _unsubscribe(self, subs):
+    def _unsubscribe(self, subs) -> None:
         try:
             subs.detach()
         except NameError:
             subs.unsubscribe()
 
-    def unsubscribe(self):
+    def unsubscribe(self) -> None:
         for subs in self._data.values():
             self._unsubscribe(subs)
         self._data = {}
@@ -221,7 +223,12 @@ class MethodEventListenerDescriptor:
         subclasses must call super().__init__(...) to setup parent listeners.
     """
 
-    def __init__(self, method: EventListenerMethod, source: BaseEventSource, one_shot: bool = False):
+    def __init__(
+        self,
+        method: EventListenerMethod,
+        source: BaseEventSource,
+        one_shot: bool = False,
+    ) -> None:
         self.method = method
         self.source = source
         self.one_shot = one_shot
@@ -229,14 +236,16 @@ class MethodEventListenerDescriptor:
     def __get__(self, owner, obj_type=None):
         bound_method = self.method.__get__(owner, obj_type)
         if self.one_shot:
+
             def one_shot_listener(event) -> None:
                 with suppress(Exception):
                     self.source.trigger.disconnect(one_shot_listener)
                 bound_method(event)
+
             return one_shot_listener
         return bound_method
 
-    def __set_name__(self, cls: type, method_name: str):
+    def __set_name__(self, cls: type, method_name: str) -> None:
         """
         Collect all descriptors and wrap __init__.
 
@@ -310,6 +319,8 @@ class EventDef:
 
 @dataclass(slots=True)
 class SelectionItemResult:
+    """Selection item data"""
+
     doc: App.Document | None
     obj: App.DocumentObject | None = None
     sub: str | None = None
@@ -569,11 +580,11 @@ class ViewCallback:
         self.dragger = None
         self._method_id = method_id
 
-    def _attach_dragger(self, view: Gui.View3DInventorPy, dragger=None) -> None:
+    def _attach_dragger(self, view: Gui.View3DInventorPy, dragger: Any = None) -> None:
         view.addDraggerCallback(dragger, self.event, self.callback)
         self.dragger = dragger
 
-    def attach(self, view: Gui.View3DInventorPy, *, dragger=None):
+    def attach(self, view: Gui.View3DInventorPy, *, dragger: Any = None):
         if self.view:
             self.detach()
 
@@ -630,7 +641,7 @@ class ViewCallbackDescriptor:
         return ViewCallback(self.event, bound_method, id(self.method))
 
 
-class view_callback:
+class view_callback:  # noqa: N801
     """Decorator to configure a method as a view event callback."""
 
     def __init__(self, event: str | coin.SoType) -> None:

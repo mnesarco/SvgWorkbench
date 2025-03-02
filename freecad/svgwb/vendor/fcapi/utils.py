@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class ShibokenLoader:
     """Lazy loader for shiboken"""
 
-    def __init__(self) -> None:
+    def __init__(self) -> None:  # noqa: D107
         self._ref_is_valid = None
 
     @property

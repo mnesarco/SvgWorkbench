@@ -5,18 +5,23 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from enum import Enum
-from typing import Callable, Protocol, TypeAlias
+from typing import Protocol, TypeAlias
+from collections.abc import Callable
 
 import FreeCAD as App  # type: ignore
 import FreeCADGui as Gui  # type: ignore
 
 
 class WithName(Protocol):
+    """Typing: objects with name property"""
+
     @property
     def name(self): ...
 
 
 class ToolSetTarget(Enum):
+    """Toolset GUI target container"""
+
     Menu = 1
     ContextMenu = 2
     Toolbar = 3
@@ -24,6 +29,8 @@ class ToolSetTarget(Enum):
 
 
 class ToolSet:
+    """Set of commands"""
+
     path: list[str]
     items: list[ToolSetItem]
 
@@ -74,7 +81,7 @@ class ToolSet:
         self,
         wb: Gui.Workbench,
         target: ToolSetTarget = ToolSetTarget.Menu,
-    ):
+    ) -> None:
         if target == ToolSetTarget.Menu:
             self._install(wb.appendMenu)
         elif target == ToolSetTarget.ContextMenu:
@@ -91,6 +98,8 @@ ToolSetItems: TypeAlias = ToolSetItem | Iterable[ToolSetItem]
 
 
 class Workbench:
+    """Base Workbench class"""
+
     internal_workbench: Gui.Workbench
 
     Label: str = None
@@ -170,14 +179,14 @@ class Workbench:
         icon: str | None = None,
         tooltip: str | None = None,
         class_name: str | None = None,
-    ):
+    ) -> type[Gui.Workbench]:
         # [FreeCAD API] PythonWorkbench
         class WorkbenchWrapper(Gui.Workbench):
             MenuText: str = label or cls.Label or cls.MenuText
             ToolTip: str = tooltip or cls.ToolTip
             Icon: str = icon or cls.Icon
 
-            def __init__(self):
+            def __init__(self) -> None:
                 super().__init__()
                 self._impl = cls()
                 self._impl.internal_workbench = self
@@ -202,6 +211,8 @@ class Workbench:
 
 
 class RuleTarget(Enum):
+    """Target container for Workbench Manipulator Rules"""
+
     MenuBar = 1
     ContextMenu = 2
     ToolBar = 3
@@ -217,6 +228,8 @@ class BoolProducer(Protocol):
 
 
 class Rule:
+    """Workbench manipulator rule"""
+
     data: list[dict[str, str]]
     target: RuleTarget
     active: RuleActivationFn
@@ -227,13 +240,13 @@ class Rule:
         target: RuleTarget,
         data: list[dict[str, str]],
         context: str | None = None,
-    ):
+    ) -> None:
         self.target = target
         self.data = data
-        self.active = lambda *args: True
+        self.active = lambda *_args: True
         self.context = context
 
-    def condition(self, predicate: RuleActivationFn):
+    def condition(self, predicate: RuleActivationFn) -> RuleActivationFn:
         self.active = predicate
         return predicate
 
@@ -241,6 +254,8 @@ class Rule:
 
 
 class Rules:
+    """Workbench Manipulator Rules"""
+
     data: list[Rule]
     name: str
     install_if_fn: BoolProducer
@@ -353,9 +368,11 @@ class Rules:
         toolbar: str | None = None,
     ) -> Rule:
         if command and toolbar:
-            raise ValueError("Specify command or toolbar but not both")
+            msg = "Specify command or toolbar but not both"
+            raise ValueError(msg)
         if not command and not toolbar:
-            raise ValueError("command or toolbar is missing")
+            msg = "command or toolbar is missing"
+            raise ValueError(msg)
 
         data = {
             "remove": command or toolbar,
@@ -374,9 +391,10 @@ class Rules:
         rules = self.data
 
         class WorkbenchManipulator:
+            """[FreeCAD API] WorkbenchManipulator"""
+
             def modifyMenuBar(self):
-                data = [r.data for r in rules if r.target == RuleTarget.MenuBar and r.active()]
-                return data
+                return [r.data for r in rules if r.target == RuleTarget.MenuBar and r.active()]
 
             def modifyContextMenu(self, recipient: str):
                 return [

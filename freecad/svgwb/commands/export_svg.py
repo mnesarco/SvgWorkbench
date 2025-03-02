@@ -15,6 +15,8 @@ import FreeCAD as App  # type: ignore
 
 @dataclass
 class LastExport:
+    """Saved data from last export command."""
+
     file: str | None = None
     pref: SvgExportPreferences | None = None
 
@@ -29,7 +31,9 @@ _last_export = LastExport()
     icon=resources.icon("export_svg.svg"),
 )
 class ExportSvg:
-    def on_activated(self):
+    """Export selection to svg."""
+
+    def on_activated(self) -> None:
         from ..svg import export
         from ..vendor.fcapi import fcui as ui
         from ..vendor.fcapi.preferences import gui_pages
@@ -42,7 +46,7 @@ class ExportSvg:
         if not svg_file:
             return
 
-        def execute():
+        def execute() -> None:
             try:
                 dialog.page.save()
             except Exception as ex:
@@ -61,7 +65,9 @@ class ExportSvg:
                 _last_export.pref = pref
 
         with ui.Dialog(
-            translate("SvgWB", "Export svg file"), modal=True, minimumSize=(600, 400)
+            translate("SvgWB", "Export svg file"),
+            modal=True,
+            minimumSize=(600, 400),
         ) as dialog:
             pref_ui = gui_pages(export_pref)["Svg"][0]
             margins = (0, 0, 0, 0)
@@ -76,23 +82,25 @@ class ExportSvg:
                     ui.Button(translate("SvgWB", "Cancel"), clicked=lambda: dialog.close())
                     ui.Button(translate("SvgWB", "Export"), clicked=execute, default=True)
 
-    def is_active(self):
+    def is_active(self) -> bool:
         return bool(
             App.GuiUp
             and App.activeDocument()
             and App.Gui.activeView()
-            and App.Gui.Selection.getSelection()
+            and App.Gui.Selection.getSelection(),
         )
 
 
 @commands.add(
     label=QT_TRANSLATE_NOOP("SvgWB", "Export Svg with last file and preferences"),
-    tooltip=QT_TRANSLATE_NOOP("SvgWB", "Export selection to svg"),
-    status_tip=QT_TRANSLATE_NOOP("SvgWB", "Export selection to svg"),
+    tooltip=QT_TRANSLATE_NOOP("SvgWB", "Export Svg with last file and preferences"),
+    status_tip=QT_TRANSLATE_NOOP("SvgWB", "Export Svg with last file and preferences"),
     icon=resources.icon("re-export_svg.svg"),
 )
 class ReExportSvg:
-    def on_activated(self):
+    """Export Svg with last file and preferences"""
+
+    def on_activated(self) -> None:
         from ..svg import export
         from ..vendor.fcapi import fcui as ui
 
@@ -103,9 +111,8 @@ class ReExportSvg:
         pref = _last_export.pref
         svg_file = _last_export.file
 
-        if Path(svg_file).exists() and not ui.confirm(
-            translate("SvgWB", "Override {}?".format(svg_file))
-        ):
+        dlg_title = translate("SvgWB", "Override {}?".format(svg_file))  # noqa: UP032
+        if Path(svg_file).exists() and not ui.confirm(dlg_title):
             return
 
         with ui.progress_indicator(translate("SvgWB", "Exporting svg")):
@@ -115,10 +122,10 @@ class ReExportSvg:
                 ui.show_error(ex.args[0])
                 raise
 
-    def is_active(self):
+    def is_active(self) -> bool:
         return bool(
             App.GuiUp
             and App.activeDocument()
             and App.Gui.activeView()
-            and App.Gui.Selection.getSelection()
+            and App.Gui.Selection.getSelection(),
         )

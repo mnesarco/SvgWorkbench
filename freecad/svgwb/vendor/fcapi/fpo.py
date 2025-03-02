@@ -592,8 +592,8 @@ class Property(Generic[_PT]):
 
     if TYPE_CHECKING:
 
-        def __get__(self, obj, obj_type=None) -> _PT: ...  # noqa: ANN001, D105
-        def __set__(self, obj, value: _PT) -> None: ...  # noqa: ANN001, D105
+        def __get__(self, obj, obj_type=None) -> _PT: ...  # noqa: ANN001
+        def __set__(self, obj, value: _PT) -> None: ...  # noqa: ANN001
 
 
 ##% ────────────────────────────────────────────────────────────────────────────
@@ -977,7 +977,7 @@ class PreferencePreset:
     preference: Preference
     preset: str
 
-    def __post_init__(self) -> None:  # noqa: D105
+    def __post_init__(self) -> None:
         if "/" in self.preset:
             self.preset = self.preset.replace("/", "-")
 
