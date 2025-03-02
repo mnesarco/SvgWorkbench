@@ -1,6 +1,8 @@
 # SPDX-License: LGPL-3.0-or-later
 # (c) 2025 Frank David Martínez Muñoz. <mnesarco at gmail.com>
 
+from __future__ import annotations
+
 from .vendor.fcapi.preferences import Preference, Preferences, auto_gui, validators as valid
 from .vendor.fcapi.lang import dtr
 
@@ -10,6 +12,10 @@ from .vendor.fcapi.lang import dtr
     default_ui_page=dtr("SvgWB", "Import"),
 )
 class SvgImportPreferences(Preferences):
+    """
+    Svg Import Preferences.
+    """
+
     group = "Preferences/Mod/SvgWB/Import"
 
     disable_unit_scaling = Preference(
@@ -113,6 +119,10 @@ class SvgImportPreferences(Preferences):
     default_ui_page=dtr("SvgWB", "Export"),
 )
 class SvgExportPreferences(Preferences):
+    """
+    Svg Import Preferences.
+    """
+
     group = "Preferences/Mod/SvgWB/Export"
 
     transform = Preference(

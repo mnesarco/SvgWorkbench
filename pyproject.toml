@@ -1,6 +1,6 @@
 [project]
 name = "SvgWorkbench"
-version = "1.0.0.dev1"
+version = "1.0.0.dev2"
 description = "FreeCAD Svg Workbench"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -54,6 +54,7 @@ ignore = [
     "SIM108",
     "UP038",
     "TID252",
+    "D100",
 ]
 
 [tool.ruff.lint.flake8-annotations]
