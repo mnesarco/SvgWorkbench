@@ -44,12 +44,14 @@ class FaceTreeNode:
         for node in self.children:
             if node.face.Area > face.Area:
                 # new face could be encompassed
-                if face.distToShape(node.face)[0] == 0.0:
+                if face.distToShape(node.face)[0] == 0.0 and \
+                        face.Wires[0].distToShape(node.face.Wires[0])[0] != 0.0:
                     # it is encompassed - enter next tree layer
                     node.insert(face, name)
                     inserted = True
             # new face could encompass
-            elif node.face.distToShape(face)[0] == 0.0:
+            elif node.face.distToShape(face)[0] == 0.0 and \
+                    node.face.Wires[0].distToShape(face.Wires[0])[0] != 0.0:
                 # it does encompass the current child nodes face
                 # create new node from face
                 if not new:
