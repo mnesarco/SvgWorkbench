@@ -5,10 +5,12 @@ from dataclasses import dataclass
 
 from .shape import SvgShape
 
+
 @dataclass
 class SvgObject:
+    """Identifiable Svg object"""
+
     id: str
     path: str
     shape: SvgShape
     href: str | None = None
-

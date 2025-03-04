@@ -19,7 +19,7 @@ from Part import (  # type: ignore
     Shape,
     Edge,
 )
-from Part import makeCompound as make_compound  # type: ignore  # noqa: N813
+from Part import makeCompound as make_compound  # type: ignore
 
 from .cache import cached_copy, cached_copy_list
 from .geom import DraftPrecision, precision_step, arc_end_to_center, make_wire, equals
@@ -88,7 +88,7 @@ class SvgSubPath:
             else:
                 self.path.append({"type": "start", "last_v": last_v})
 
-        for x, y in zip(args[0::2], args[1::2]):
+        for x, y in zip(args[0::2], args[1::2], strict=False):
             if relative:
                 last_v = last_v.add(Vector(x, -y, 0))
             else:
@@ -173,7 +173,7 @@ class SvgSubPath:
                     pole1 = last_v.sub(self.path[-1]["pole2"]).add(last_v)
                 else:
                     pole1 = last_v
-            else:
+            else:  # noqa: PLR5501
                 if relative:
                     pole1 = last_v.add(Vector(p1x, -p1y, 0))
                 else:
@@ -192,7 +192,7 @@ class SvgSubPath:
                 "last_v": last_v,
             })
 
-    def add_quadratic_bezier(self, args: list[float], relative: bool, smooth: bool):
+    def add_quadratic_bezier(self, args: list[float], relative: bool, smooth: bool) -> None:
         last_v = self.path[-1]["last_v"]
         if smooth:
             p_iter = list(
@@ -220,7 +220,7 @@ class SvgSubPath:
                     pole = last_v.sub(self.path[-1]["pole"]).add(last_v)
                 else:
                     pole = last_v
-            else:
+            else:  # noqa: PLR5501
                 if relative:
                     pole = last_v.add(Vector(px, -py, 0))
                 else:
@@ -250,10 +250,10 @@ class SvgSubPath:
         given a delta, move possibly associated member accordingly.
         """
         if path_data["type"] == "cbezier":
-            # for cbeziers we also relocate the second pole
+            # for cbezier we also relocate the second pole
             path_data["pole2"] = path_data["pole2"].sub(delta)
         elif path_data["type"] == "qbezier":
-            # for qbeziers we also relocate the pole by half of the delta
+            # for qbezier we also relocate the pole by half of the delta
             path_data["pole"] = path_data["pole"].sub(delta.scale(0.5, 0.5, 0))
         # all data types have last_v
         path_data["last_v"] = path_data["last_v"].sub(delta)
@@ -299,8 +299,9 @@ class SvgSubPath:
 
     def create_edges(self) -> list[Edge]:
         """Return ordered lits segments from path data."""
-        if not type(self.path[0]) is dict:
+        if type(self.path[0]) is not dict:
             return None
+
         edges = []
         last_v = Vector(0, 0, 0)
         for pdset in self.path:
@@ -308,12 +309,14 @@ class SvgSubPath:
             match pdset["type"]:
                 case "start":
                     last_v = next_v
+
                 case "line":
                     if equals(last_v, next_v, self.precision):
                         # line segment too short, we simply skip it
                         next_v = last_v
                     else:
                         edges.append(LineSegment(last_v, next_v).toShape())
+
                 case "arc":
                     rx = pdset["rx"]
                     ry = pdset["ry"]
@@ -363,7 +366,7 @@ class SvgSubPath:
                     _d1 = pole1.distanceToLine(last_v, next_v)
                     _d2 = pole2.distanceToLine(last_v, next_v)
                     if _d1 < _precision and _d2 < _precision:
-                        # poles and endpints are all on a line
+                        # poles and endpoints are all on a line
                         _seg = LineSegment(self.last_v, next_v)
                         seg = _seg.toShape()
                     else:
@@ -371,6 +374,7 @@ class SvgSubPath:
                         b.setPoles([last_v, pole1, pole2, next_v])
                         seg = approx_bspline(b, self.discretization).toShape()
                     edges.append(seg)
+
                 case "qbezier":
                     if equals(last_v, next_v, self.precision):
                         # segment too small - skipping.
@@ -388,10 +392,13 @@ class SvgSubPath:
                             b.setPoles([last_v, pole, next_v])
                             seg = approx_bspline(b, self.discretization).toShape()
                         edges.append(seg)
+
                 case _:
                     msg = f"Illegal path_data type. {pdset['type']}"
                     raise InvalidPathDataError(msg)
+
             last_v = next_v
+
         return edges
 
 
@@ -409,8 +416,7 @@ class SvgPath(SvgShape):
             return make_compound(paths)
         return None
 
-    @cached_copy_list
-    def shapes(self) -> list[Shape]:
+    def _compute_sub_paths(self) -> list[SvgSubPath]:
         paths: list[SvgSubPath] = []
         commands = iter(PathCommands(self.d))
         path = SvgSubPath(self.discretization, self.precision)
@@ -423,10 +429,16 @@ class SvgPath(SvgShape):
                     break
                 path = SvgSubPath(self.discretization, self.precision, ex.point)
                 paths.append(path)
+
         if len(paths[-1].path) == 1 and paths[-1].path[0]["type"] == "start":
             # nothing more than the start preamble - delete.
             paths.pop()
 
+        return paths
+
+    @cached_copy_list
+    def shapes(self) -> list[Shape]:
+        paths = self._compute_sub_paths()
         cnt = count(1)
         open_shapes = []
         faces = FaceTreeNode()

@@ -14,6 +14,8 @@ from .cache import cached_copy
 
 @dataclass
 class SvgLine(SvgShape):
+    """Line Edge"""
+
     x1: float
     y1: float
     x2: float

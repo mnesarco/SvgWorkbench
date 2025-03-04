@@ -9,8 +9,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .dimension import SvgDimension
 
+
 @dataclass(slots=True)
 class SvgOptions:
+    """Additional custom freecad options in svg object"""
+
     skip: bool = False
     dimension: SvgDimension | None = None
-

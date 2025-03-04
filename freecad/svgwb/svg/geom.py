@@ -13,16 +13,19 @@ from Part import __sortEdges__ as sort_edges  # type: ignore
 # draft precision for calculations
 DraftPrecision = draft_precision()
 
-def precision_step(precision: int = DraftPrecision):
+
+def precision_step(precision: int = DraftPrecision) -> float:
     """
     Return the smallest possible fraction or step size for a given precision.
-    Since precision is defined as 'relevant decimal digits behind the comma' 
+
+    Since precision is defined as 'relevant decimal digits behind the comma'
     the outcome for eg. precision = 3 is 0,001.
-     
+
     Parameters
     ----------
     precision : int
                 relevant digits behind comma
+
     Returns
     -------
     float
@@ -31,6 +34,7 @@ def precision_step(precision: int = DraftPrecision):
     """
     return 10 ** (-precision)
 
+
 def arc_end_to_center(
     last_v: Vector,
     current_v: Vector,
@@ -38,8 +42,9 @@ def arc_end_to_center(
     ry: float,
     x_rotation: float = 0.0,
     correction: bool = False,
-):
-    """Calculate the possible centers for an arc in endpoint parameterization.
+) -> tuple[list[tuple[Vector, float, float]], tuple[float, float]]:
+    """
+    Calculate the possible centers for an arc in endpoint parameterization.
 
     Calculate (positive and negative) possible centers for an arc given in
     ``endpoint parametrization``.
@@ -78,6 +83,7 @@ def arc_end_to_center(
         The first element of the list is the positive tuple,
         consisting of center, angle, and angle increment;
         the second element is the negative tuple.
+
     """
     # scale_fact_sign = 1 if (large_flag != sweep_flag) else -1
     rx = float(rx)
@@ -127,7 +133,8 @@ def arc_end_to_center(
         #                                        0))  # eq. 5.6
         # we need the right sign for the angle
         angle1 = angle_between_vectors(
-            Vector(1, 0, 0), Vector((v1.x - vcx1.x) / rx, (v1.y - vcx1.y) / ry, 0)
+            Vector(1, 0, 0),
+            Vector((v1.x - vcx1.x) / rx, (v1.y - vcx1.y) / ry, 0),
         )  # eq. 5.5
         angle_delta = angle_between_vectors(
             Vector((v1.x - vcx1.x) / rx, (v1.y - vcx1.y) / ry, 0),
@@ -138,14 +145,14 @@ def arc_end_to_center(
     return results, (rx, ry)
 
 
-
 def make_wire(
     path: list[Edge],
-    precision : int,
+    precision: int,
     check_closed: bool = False,
     dont_try: bool = False,
-):
-    """Try to make a wire out of the list of edges.
+) -> Compound | Wire:
+    """
+    Try to make a wire out of the list of edges.
 
     If the wire functions fail or the wire is not closed,
     if required the TopoShapeCompoundPy::connectEdgesToWires()
@@ -155,6 +162,8 @@ def make_wire(
     ----------
     path : Part.Edge
         A collection of edges
+    precision: in
+        Decimal places for calcs
     check_closed : bool, optional
         Default is `False`.
     dont_try : bool, optional
@@ -167,6 +176,7 @@ def make_wire(
         A wire created from the ordered edges.
     Part::Compound
         A compound made of the edges, but unable to form a wire.
+
     """
     if not dont_try:
         try:
@@ -188,18 +198,15 @@ def make_wire(
             sh = comp
     return sh
 
-    
-def equals(
-	u: Vector,
-    v: Vector,
-	precision: int = -1
-):
-    """Return False if each delta of the two vectors components is zero.
+
+def equals(u: Vector, v: Vector, precision: int = -1) -> bool:
+    """
+    Return False if each delta of the two vectors components is zero.
 
     Due to rounding errors, a delta is probably never going to be
     exactly zero. Therefore, it rounds the element by the number
     of decimals specified in the `precision` parameter - if `precision`
-    is not set the draft precision preference is used. 
+    is not set the draft precision preference is used.
     It then compares the rounded coordinates against zero.
 
     Parameters
@@ -209,7 +216,7 @@ def equals(
     v : Base::Vector3
         The second vector to compare  (comparison is commutative)
     precision : int
-                mathematical precision - if not set draft precision 
+                mathematical precision - if not set draft precision
                 preference is used.
 
     Returns
@@ -217,12 +224,12 @@ def equals(
     bool
         `True` if each of the coordinate deltas is smaller than precision.
         `False` otherwise.
+
     """
     delta = u.sub(v)
-    if (precision == -1):
+    if precision == -1:
         precision = DraftPrecision()
     x = round(delta.x, precision)
     y = round(delta.y, precision)
     z = round(delta.z, precision)
-    return (x == 0 and y == 0 and z == 0)
-
+    return x == 0 and y == 0 and z == 0

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Generator, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from ..config import SvgImportPreferences, resources
@@ -15,6 +15,7 @@ from ..vendor.fcapi import fpo
 from ..vendor.fcapi.lang import translate
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
     from FreeCAD import DocumentObject  # type: ignore
 
 
@@ -24,9 +25,11 @@ def find_child_actions(parent: DocumentObject) -> Generator[DocumentObject, None
 
 @fpo.view_proxy(icon=resources.icon("svg-db.svg"))
 class SvgFileViewProvider(fpo.ViewProxy):
+    """ViewProvider for svg database objects."""
+
     Default = fpo.DisplayMode(is_default=True)
 
-    def on_claim_children(self, event: fpo.events.ClaimChildrenEvent) -> list[DocumentObject]:
+    def on_claim_children(self, _event: fpo.events.ClaimChildrenEvent) -> list[DocumentObject]:
         return list(find_child_actions(self.Object))
 
     def on_context_menu(self, event: fpo.events.ContextMenuEvent) -> None:
@@ -73,6 +76,8 @@ HiddenOutputMode = fpo.PropertyMode.Hidden | fpo.PropertyMode.NoRecompute | fpo.
 
 @fpo.proxy(view_proxy=SvgFileViewProvider, subtype="Svg::Import")
 class SvgFileFeature(fpo.DataProxy):
+    """Svg Database Object Proxy."""
+
     # External source svg file
     external_file = fpo.PropertyFile(section="")
 

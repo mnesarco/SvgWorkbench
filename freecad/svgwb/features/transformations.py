@@ -20,7 +20,8 @@ def boundbox_to_rect(box: BoundBox) -> Wire:
     if not box.isValid():
         return Wire()
 
-    if box.XLength <= 1e-6 or box.YLength <= 1e-6:
+    MIN_LEN = 1e-6
+    if box.XLength <= MIN_LEN or box.YLength <= MIN_LEN:
         return Wire()
 
     x0, y0, x1, y1 = box.XMin, box.YMin, box.XMax, box.YMax
@@ -83,7 +84,7 @@ def shape_to_faces(shape: Shape) -> Face | Compound | None:
         case "Vertex":
             return None
         case _:
-            faces = [f for f in shape.Faces]
+            faces = list(shape.Faces)
             wires = shape.Wires
             edges = shape.Edges
             for wire in wires:
@@ -91,7 +92,7 @@ def shape_to_faces(shape: Shape) -> Face | Compound | None:
                     faces.append(Face(wire))
             for edge in edges:
                 if all(edge not in w.Edges for w in wires) and edge.isClosed():
-                    faces.append(Face(Wire([edge])))
+                    faces.append(Face(Wire([edge])))  # noqa: PERF401
             return make_compound(faces)
 
 
@@ -109,7 +110,7 @@ def shape_to_wires(shape: Shape) -> Wire | Compound | None:
         case "Vertex":
             return None
         case _:
-            wires = [w for w in shape.Wires]
+            wires = list(shape.Wires)
             edges = shape.Edges
             for edge in edges:
                 if all(edge not in w.Edges for w in wires):

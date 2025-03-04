@@ -1,28 +1,29 @@
 # SPDX-License: LGPL-3.0-or-later
 # (c) 2025 Frank David Martínez Muñoz. <mnesarco at gmail.com>
 
+# ruff: noqa: SLF001
+
 from __future__ import annotations
-
 from dataclasses import dataclass
-
 from FreeCAD import Vector, Placement, Document, DocumentObject  # type: ignore
-
 from .shape import SvgShape
 
 
 @dataclass
 class SvgText(SvgShape):
+    """Basic svg text and tspan objects"""
+
     x: float
     y: float
     parent: SvgText | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self._raw_text = []
         self._children = []
         if self.parent:
             self.parent._children.append(self)
 
-    def to_text(self, doc: Document):
+    def to_text(self, doc: Document) -> DocumentObject | None:
         text = []
         text.extend(self._raw_text)
         for sub in self._children:
@@ -30,7 +31,7 @@ class SvgText(SvgShape):
 
         text_lines = [s.strip() for s in text]
         if not text_lines:
-            return
+            return None
 
         from draftobjects.text import Text  # type: ignore
 
@@ -44,10 +45,10 @@ class SvgText(SvgShape):
         obj.Placement = placement
         return obj
 
-    def append(self, content: str):
+    def append(self, content: str) -> None:
         self._raw_text.append(content)
 
-    def apply_style(self, obj: DocumentObject):
+    def apply_style(self, obj: DocumentObject) -> None:
         from draftviewproviders.view_text import ViewProviderText  # type: ignore
 
         vo = obj.ViewObject

@@ -4,55 +4,55 @@
 <context>
     <name>Preferences</name>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="337"/>
         <location filename="../../vendor/fcapi/preferences.py" line="347"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="357"/>
         <source>New preset name must be different</source>
         <translation>El nuevo nombre debe ser diferente</translation>
     </message>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="350"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="360"/>
         <source>Default preset cannot be renamed</source>
         <translation>El preset predeterminado no se puede renombrar</translation>
     </message>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="361"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="371"/>
         <source>Default preset cannot be removed</source>
         <translation>El preset predeterminado no se puede eliminar</translation>
     </message>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="401"/>
-        <location filename="../../vendor/fcapi/preferences.py" line="416"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="411"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="426"/>
         <source>Preset:</source>
         <translation>Preset:</translation>
     </message>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="385"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="395"/>
         <source>Preset action:</source>
         <translation>Acción:</translation>
     </message>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="386"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="396"/>
         <source>Save preset as:</source>
         <translation>Guardar como:</translation>
     </message>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="387"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="397"/>
         <source>Rename preset to:</source>
         <translation>Renombrar a:</translation>
     </message>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="388"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="398"/>
         <source>Delete preset:</source>
         <translation>Eliminar:</translation>
     </message>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="408"/>
-        <location filename="../../vendor/fcapi/preferences.py" line="446"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="418"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="456"/>
         <source>Update current preset</source>
         <translation>Actualizar</translation>
     </message>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="452"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="462"/>
         <source>Delete current preset</source>
         <translation>Eliminar</translation>
     </message>
@@ -60,348 +60,348 @@
 <context>
     <name>SvgWB</name>
     <message>
-        <location filename="../../preferences.py" line="122"/>
+        <location filename="../../preferences.py" line="132"/>
         <source>Transform</source>
         <translation>Transformación</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="50"/>
+        <location filename="../../preferences.py" line="56"/>
         <source>Import transform</source>
         <translation>Transformación</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="52"/>
+        <location filename="../../preferences.py" line="58"/>
         <source>None (fastest)</source>
         <translation>Ninguna (Rápido)</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="53"/>
+        <location filename="../../preferences.py" line="59"/>
         <source>Use default styles</source>
         <translation>Usar estilos predeterminados</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="54"/>
+        <location filename="../../preferences.py" line="60"/>
         <source>Original styles</source>
         <translation>Usar estilo originales</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="10"/>
-        <location filename="../../commands/import_svg.py" line="63"/>
+        <location filename="../../preferences.py" line="12"/>
+        <location filename="../../commands/import_svg.py" line="64"/>
         <source>Import</source>
         <translation>Importar</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="19"/>
+        <location filename="../../preferences.py" line="25"/>
         <source>Disable unit scaling</source>
         <translation>Deshabilitar escalado de unidades</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="24"/>
-        <location filename="../../preferences.py" line="42"/>
-        <location filename="../../preferences.py" line="106"/>
+        <location filename="../../preferences.py" line="30"/>
+        <location filename="../../preferences.py" line="48"/>
+        <location filename="../../preferences.py" line="112"/>
         <source>Geometry</source>
         <translation>Geometría</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="31"/>
+        <location filename="../../preferences.py" line="37"/>
         <source>Coordinate Resolution</source>
         <translation>Resolución de coordenadas</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="35"/>
+        <location filename="../../preferences.py" line="41"/>
         <source>254 dpi</source>
         <translation>254 dpi</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="49"/>
+        <location filename="../../preferences.py" line="55"/>
         <source>Transform style</source>
         <translation>Aplicación de estilos</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="56"/>
-        <location filename="../../preferences.py" line="66"/>
-        <location filename="../../preferences.py" line="77"/>
-        <location filename="../../preferences.py" line="87"/>
-        <location filename="../../preferences.py" line="96"/>
+        <location filename="../../preferences.py" line="62"/>
+        <location filename="../../preferences.py" line="72"/>
+        <location filename="../../preferences.py" line="83"/>
+        <location filename="../../preferences.py" line="93"/>
+        <location filename="../../preferences.py" line="102"/>
         <source>Styles</source>
         <translation>Estilos</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="63"/>
+        <location filename="../../preferences.py" line="69"/>
         <source>Default line width</source>
         <translation>Ancho de línea por defecto</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="64"/>
+        <location filename="../../preferences.py" line="70"/>
         <source>Import line width</source>
         <translation>Ancho de línea</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="74"/>
+        <location filename="../../preferences.py" line="80"/>
         <source>Default line color</source>
         <translation>Color de línea por defecto</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="75"/>
+        <location filename="../../preferences.py" line="81"/>
         <source>Import line color</source>
         <translation>Color de línea por defecto</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="84"/>
+        <location filename="../../preferences.py" line="90"/>
         <source>Default fill color</source>
         <translation>Color de relleno por defecto</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="85"/>
+        <location filename="../../preferences.py" line="91"/>
         <source>Import fill color</source>
         <translation>Color de relleno por defecto</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="94"/>
+        <location filename="../../preferences.py" line="100"/>
         <source>Default font size</source>
         <translation>Tamaño de fuente por defecto</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="95"/>
+        <location filename="../../preferences.py" line="101"/>
         <source>Import font size</source>
         <translation>Tamaño de fuente por defecto</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="104"/>
+        <location filename="../../preferences.py" line="110"/>
         <source>Discretization points</source>
         <translation>Cantidad de puntos para aproximaciones</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="105"/>
+        <location filename="../../preferences.py" line="111"/>
         <source>Number of discretization points for approximated edges</source>
         <translation>Número de puntos para aproximar Edges si se requiere</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="123"/>
+        <location filename="../../preferences.py" line="133"/>
         <source>Export transform</source>
         <translation>Transformación</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="125"/>
+        <location filename="../../preferences.py" line="135"/>
         <source>Translated (for print and display)</source>
         <translation>Trasladado para impresión o pantalla</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="126"/>
+        <location filename="../../preferences.py" line="136"/>
         <source>Raw (for CAM)</source>
         <translation>Sin trasladar (CAM)</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="128"/>
         <location filename="../../preferences.py" line="138"/>
-        <location filename="../../preferences.py" line="164"/>
-        <location filename="../../preferences.py" line="225"/>
-        <location filename="../../preferences.py" line="234"/>
+        <location filename="../../preferences.py" line="148"/>
+        <location filename="../../preferences.py" line="174"/>
+        <location filename="../../preferences.py" line="235"/>
+        <location filename="../../preferences.py" line="244"/>
         <source>General</source>
         <translation>General</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="135"/>
+        <location filename="../../preferences.py" line="145"/>
         <source>Scale</source>
         <translation>Escala</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="136"/>
+        <location filename="../../preferences.py" line="146"/>
         <source>Export scale</source>
         <translation>Escala</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="172"/>
+        <location filename="../../preferences.py" line="182"/>
         <source>Export visible line width</source>
         <translation>Ancho de líneas visibles</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="174"/>
-        <location filename="../../preferences.py" line="185"/>
+        <location filename="../../preferences.py" line="184"/>
+        <location filename="../../preferences.py" line="195"/>
         <source>Visible line style</source>
         <translation>Estilo de líneas visibles</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="183"/>
+        <location filename="../../preferences.py" line="193"/>
         <source>Export visible line color</source>
         <translation>Color de líneas visibles</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="193"/>
+        <location filename="../../preferences.py" line="203"/>
         <source>Export hidden line width</source>
         <translation>Ancho de líneas ocultas</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="195"/>
-        <location filename="../../preferences.py" line="206"/>
-        <location filename="../../preferences.py" line="214"/>
-        <location filename="../../preferences.py" line="215"/>
+        <location filename="../../preferences.py" line="205"/>
+        <location filename="../../preferences.py" line="216"/>
         <location filename="../../preferences.py" line="224"/>
-        <location filename="../../preferences.py" line="233"/>
+        <location filename="../../preferences.py" line="225"/>
+        <location filename="../../preferences.py" line="234"/>
+        <location filename="../../preferences.py" line="243"/>
         <source>Hidden line style</source>
         <translation>Estilo de líneas ocultas</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="204"/>
+        <location filename="../../preferences.py" line="214"/>
         <source>Export hidden line color</source>
         <translation>Color de líneas ocultas</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="213"/>
+        <location filename="../../preferences.py" line="223"/>
         <source>Hidden line style (Dash array)</source>
         <translation>Patrón de líneas ocultas</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="223"/>
+        <location filename="../../preferences.py" line="233"/>
         <source>Non scaling line width</source>
         <translation>Efecto de línea no escalada</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="232"/>
+        <location filename="../../preferences.py" line="242"/>
         <source>Show hidden lines</source>
         <translation>Mostrar líneas ocultas</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="145"/>
+        <location filename="../../preferences.py" line="155"/>
         <source>View direction</source>
         <translation>Dirección de proyección</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="32"/>
+        <location filename="../../preferences.py" line="38"/>
         <source>Precision in coordinate calculation</source>
         <translation>Precisión en cálculo de coordenadas</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="34"/>
+        <location filename="../../preferences.py" line="40"/>
         <source>25.4 dpi</source>
         <translation>25,4 dpi</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="36"/>
+        <location filename="../../preferences.py" line="42"/>
         <source>2,540 dpi</source>
         <translation>2.540 dpi</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="37"/>
+        <location filename="../../preferences.py" line="43"/>
         <source>25,400 dpi</source>
         <translation>25.400 dpi</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="38"/>
+        <location filename="../../preferences.py" line="44"/>
         <source>254,000 dpi</source>
         <translation>254.000 dpi</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="39"/>
+        <location filename="../../preferences.py" line="45"/>
         <source>2,540,000 dpi</source>
         <translation>2.540.000 dpi</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="40"/>
+        <location filename="../../preferences.py" line="46"/>
         <source>Maximum dpi</source>
         <translation>Máximo dpi</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="146"/>
+        <location filename="../../preferences.py" line="156"/>
         <source>Projection direction</source>
         <translation>Dirección de proyección</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="148"/>
+        <location filename="../../preferences.py" line="158"/>
         <source>Front</source>
         <translation>Frente</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="149"/>
+        <location filename="../../preferences.py" line="159"/>
         <source>Back</source>
         <translation>Atrás</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="150"/>
+        <location filename="../../preferences.py" line="160"/>
         <source>Left</source>
         <translation>Izquierda</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="151"/>
+        <location filename="../../preferences.py" line="161"/>
         <source>Right</source>
         <translation>Derecha</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="152"/>
+        <location filename="../../preferences.py" line="162"/>
         <source>Top</source>
         <translation>Arriba</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="153"/>
+        <location filename="../../preferences.py" line="163"/>
         <source>Bottom</source>
         <translation>Abajo</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="154"/>
+        <location filename="../../preferences.py" line="164"/>
         <source>Isometric 1 (Top-Front-Right)</source>
         <translation>Isométrico 1 (Arriba-Frente-Derecha)</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="155"/>
+        <location filename="../../preferences.py" line="165"/>
         <source>Isometric 2 (Top-Left-Front)</source>
         <translation>Isométrico 2 (Arriba-Izquierda-Frente)</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="156"/>
+        <location filename="../../preferences.py" line="166"/>
         <source>Isometric 3 (Top-Right-Back)</source>
         <translation>Isométrico 3 (Arriba-Derecha-Atrás)</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="157"/>
+        <location filename="../../preferences.py" line="167"/>
         <source>Isometric 4 (Top-Back-Left)</source>
         <translation>Isométric 4 (Arriba-Atrás-Izquierda)</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="158"/>
+        <location filename="../../preferences.py" line="168"/>
         <source>Isometric 5 (Bottom-Front-Right)</source>
         <translation>Isométrico 5 (Abajo-Frente-Derecha)</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="159"/>
+        <location filename="../../preferences.py" line="169"/>
         <source>Isometric 6 (Bottom-Left-Front)</source>
         <translation>Isométrico 6 (Abajo-Izquierda-Frente)</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="160"/>
+        <location filename="../../preferences.py" line="170"/>
         <source>Isometric 7 (Bottom-Right-Back)</source>
         <translation>Isométrico 7 (Abajo-Derecha-Atrás)</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="161"/>
+        <location filename="../../preferences.py" line="171"/>
         <source>Isometric 8 (Bottom-Back-Left)</source>
         <translation>Isométrico 8 (Abajo-Atrás-Izquierda)</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="162"/>
+        <location filename="../../preferences.py" line="172"/>
         <source>Camera</source>
         <translation>Cámara</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="171"/>
-        <location filename="../../preferences.py" line="192"/>
+        <location filename="../../preferences.py" line="181"/>
+        <location filename="../../preferences.py" line="202"/>
         <source>Line width</source>
         <translation>Ancho de línea</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="182"/>
-        <location filename="../../preferences.py" line="203"/>
+        <location filename="../../preferences.py" line="192"/>
+        <location filename="../../preferences.py" line="213"/>
         <source>Line color</source>
         <translation>Color de línea</translation>
     </message>
     <message>
         <location filename="../../commands/import_svg.py" line="13"/>
-        <location filename="../../commands/import_svg.py" line="51"/>
+        <location filename="../../commands/import_svg.py" line="52"/>
         <source>Import Svg</source>
         <translation>Importar Svg</translation>
     </message>
     <message>
-        <location filename="../../commands/import_svg.py" line="62"/>
-        <location filename="../../commands/export_svg.py" line="76"/>
+        <location filename="../../commands/import_svg.py" line="63"/>
+        <location filename="../../commands/export_svg.py" line="82"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
@@ -417,10 +417,10 @@
         <translation>Crear un nuevo origen svg desde un archivo externo</translation>
     </message>
     <message>
-        <location filename="../../commands/create_svg_file_object.py" line="27"/>
+        <location filename="../../commands/create_svg_file_object.py" line="29"/>
         <location filename="../../commands/import_svg.py" line="14"/>
         <location filename="../../commands/import_svg.py" line="17"/>
-        <location filename="../../commands/import_svg.py" line="27"/>
+        <location filename="../../commands/import_svg.py" line="28"/>
         <source>Import svg file</source>
         <translation>Importar archivo svg</translation>
     </message>
@@ -430,140 +430,140 @@
         <translation>Importat un archivo svg dentro del documento</translation>
     </message>
     <message>
-        <location filename="../../commands/create_svg_file_object.py" line="28"/>
-        <location filename="../../commands/import_svg.py" line="28"/>
-        <location filename="../../commands/export_svg.py" line="39"/>
+        <location filename="../../commands/create_svg_file_object.py" line="30"/>
+        <location filename="../../commands/import_svg.py" line="29"/>
+        <location filename="../../commands/export_svg.py" line="43"/>
         <source>Svg files (*.svg)</source>
         <translation>Archivos svg (*.svg)</translation>
     </message>
     <message>
-        <location filename="../../commands/export_svg.py" line="26"/>
+        <location filename="../../commands/export_svg.py" line="28"/>
         <source>Export Svg</source>
         <translation>Exportar svg</translation>
     </message>
     <message>
-        <location filename="../../commands/export_svg.py" line="27"/>
-        <location filename="../../commands/export_svg.py" line="28"/>
-        <location filename="../../commands/export_svg.py" line="90"/>
-        <location filename="../../commands/export_svg.py" line="91"/>
+        <location filename="../../commands/export_svg.py" line="29"/>
+        <location filename="../../commands/export_svg.py" line="30"/>
         <source>Export selection to svg</source>
         <translation>Exportar la selección a un archivo svg</translation>
     </message>
     <message>
-        <location filename="../../commands/export_svg.py" line="38"/>
-        <location filename="../../commands/export_svg.py" line="64"/>
+        <location filename="../../commands/export_svg.py" line="42"/>
+        <location filename="../../commands/export_svg.py" line="68"/>
         <source>Export svg file</source>
         <translation>Exportar archivo svg</translation>
     </message>
     <message>
-        <location filename="../../commands/export_svg.py" line="89"/>
+        <location filename="../../commands/export_svg.py" line="95"/>
+        <location filename="../../commands/export_svg.py" line="96"/>
+        <location filename="../../commands/export_svg.py" line="97"/>
         <source>Export Svg with last file and preferences</source>
         <translation>Exportar svg con la última ruta y preferencias</translation>
     </message>
     <message>
-        <location filename="../../preferences.py" line="113"/>
-        <location filename="../../commands/export_svg.py" line="77"/>
+        <location filename="../../preferences.py" line="119"/>
+        <location filename="../../commands/export_svg.py" line="83"/>
         <source>Export</source>
         <translation>Exportar</translation>
     </message>
     <message>
-        <location filename="../../commands/export_svg.py" line="52"/>
-        <location filename="../../commands/export_svg.py" line="111"/>
+        <location filename="../../commands/export_svg.py" line="56"/>
+        <location filename="../../commands/export_svg.py" line="118"/>
         <source>Exporting svg</source>
         <translation>Exportando svg</translation>
     </message>
     <message>
-        <location filename="../../svg/export.py" line="235"/>
+        <location filename="../../svg/export.py" line="248"/>
         <source>The export list contains no object with a valid bounding box</source>
         <translation>No hay objectos exportables en la selección</translation>
     </message>
     <message>
-        <location filename="../../workbenches/svgwb.py" line="14"/>
+        <location filename="../../workbenches/svgwb.py" line="19"/>
         <source>Svg Manipulation Workbench</source>
         <translation>Workbench de manipolación de svg</translation>
     </message>
     <message>
-        <location filename="../../features/svg_file.py" line="38"/>
+        <location filename="../../features/svg_file.py" line="41"/>
         <source>Create action query</source>
         <translation>Crear una acción</translation>
     </message>
     <message>
-        <location filename="../../features/svg_file.py" line="47"/>
+        <location filename="../../features/svg_file.py" line="50"/>
         <source>Sync with external svg file</source>
         <translation>Sincronizar con el archivo externo</translation>
     </message>
     <message>
-        <location filename="../../features/svg_file.py" line="55"/>
+        <location filename="../../features/svg_file.py" line="58"/>
         <source>Extract original svg file</source>
         <translation>Extraer el archivo original</translation>
     </message>
     <message>
-        <location filename="../../features/svg_file.py" line="64"/>
+        <location filename="../../features/svg_file.py" line="67"/>
         <source>Save as...</source>
         <translation>Guardar como...</translation>
     </message>
     <message>
-        <location filename="../../features/svg_file.py" line="115"/>
+        <location filename="../../features/svg_file.py" line="120"/>
         <source>Importing svg elements...</source>
         <translation>Importando elementos svg...</translation>
     </message>
     <message>
-        <location filename="../../features/svg_action_task.py" line="26"/>
+        <location filename="../../features/svg_action_task.py" line="30"/>
         <source>Tag</source>
         <translation>Tag</translation>
     </message>
     <message>
-        <location filename="../../features/svg_action_task.py" line="27"/>
+        <location filename="../../features/svg_action_task.py" line="31"/>
         <source>Id</source>
         <translation>Id</translation>
     </message>
     <message>
-        <location filename="../../features/svg_action_task.py" line="28"/>
+        <location filename="../../features/svg_action_task.py" line="32"/>
         <source>Label</source>
         <translation>Label</translation>
     </message>
     <message>
-        <location filename="../../features/svg_action_task.py" line="29"/>
+        <location filename="../../features/svg_action_task.py" line="33"/>
         <source>Path</source>
         <translation>Path</translation>
     </message>
     <message>
-        <location filename="../../features/svg_action_task.py" line="83"/>
+        <location filename="../../features/svg_action_task.py" line="91"/>
         <source>Query</source>
         <translation>Consulta</translation>
     </message>
     <message>
-        <location filename="../../features/svg_action_task.py" line="88"/>
+        <location filename="../../features/svg_action_task.py" line="95"/>
         <source>Filter criteria:</source>
         <translation>Filtro:</translation>
     </message>
     <message>
-        <location filename="../../features/svg_action_task.py" line="91"/>
+        <location filename="../../features/svg_action_task.py" line="99"/>
         <source>Filter pattern:</source>
         <translation>Patrón:</translation>
     </message>
     <message>
-        <location filename="../../features/svg_action_task.py" line="92"/>
+        <location filename="../../features/svg_action_task.py" line="102"/>
         <source>Filter result</source>
         <translation>Resultados</translation>
     </message>
     <message>
-        <location filename="../../features/svg_action_task.py" line="94"/>
+        <location filename="../../features/svg_action_task.py" line="105"/>
         <source>Output</source>
         <translation>Salida</translation>
     </message>
     <message>
-        <location filename="../../features/svg_action_task.py" line="98"/>
+        <location filename="../../features/svg_action_task.py" line="109"/>
         <source>Output type:</source>
         <translation>Tipo de salida:</translation>
     </message>
     <message>
-        <location filename="../../features/svg_action_task.py" line="102"/>
+        <location filename="../../features/svg_action_task.py" line="113"/>
         <source>Make compound:</source>
         <translation>Crear compuesto:</translation>
     </message>
     <message>
-        <location filename="../../features/svg_action_task.py" line="121"/>
+        <location filename="../../features/svg_action_task.py" line="132"/>
         <source>Update {}</source>
         <translation>Actualizar {}</translation>
     </message>
@@ -571,32 +571,32 @@
 <context>
     <name>Validation</name>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="671"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="692"/>
         <source>Minimum accepted value is {} {}</source>
         <translation>El mínimo valor aceptable es {} {}</translation>
     </message>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="691"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="714"/>
         <source>Maximum accepted value is {} {}</source>
         <translation>El máximo valor aceptable es {} {}</translation>
     </message>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="705"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="730"/>
         <source>Maximum accepted length is {}</source>
         <translation>La longitud máxima es {}</translation>
     </message>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="716"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="745"/>
         <source>Minimum accepted length is {}</source>
         <translation>La longitud mínima es {}</translation>
     </message>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="726"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="757"/>
         <source>Required</source>
         <translation>Requerido</translation>
     </message>
     <message>
-        <location filename="../../vendor/fcapi/preferences.py" line="741"/>
+        <location filename="../../vendor/fcapi/preferences.py" line="775"/>
         <source>Invalid format</source>
         <translation>Formato inválido</translation>
     </message>

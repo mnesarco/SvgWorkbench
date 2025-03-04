@@ -17,13 +17,15 @@ import math
 
 @dataclass
 class SvgRect(SvgShape):
+    """Rectangle Straight/Rounded"""
+
     x: float
     y: float
     width: float
     height: float
     rx: float
     ry: float
-    precision : int
+    precision: int
 
     def rounded_edges(self) -> list[Shape]:
         max_rx = self.width / 2.0
@@ -31,10 +33,8 @@ class SvgRect(SvgShape):
         rx = self.rx
         ry = self.ry or rx
         rx = rx or ry
-        if rx > max_rx:
-            rx = max_rx
-        if ry > max_ry:
-            ry = max_ry
+        rx = min(rx, max_rx)
+        ry = min(ry, max_ry)
 
         _precision = precision_step(self.precision)
         if rx < _precision or ry < _precision:
@@ -71,7 +71,7 @@ class SvgRect(SvgShape):
             arc.transform(m1)
             esh.append(arc.toShape())
         edges = []
-        for esh1, esh2 in zip(esh[-1:] + esh[:-1], esh):
+        for esh1, esh2 in zip(esh[-1:] + esh[:-1], esh, strict=False):
             p1 = esh1.Vertexes[-1].Point
             p2 = esh2.Vertexes[0].Point
             if not equals(p1, p2):
@@ -90,13 +90,12 @@ class SvgRect(SvgShape):
         p3 = Vector(x + w, y - h, 0)
         p4 = Vector(x,     y - h, 0)
         # fmt: on
-        edges = [
+        return [
             LineSegment(p1, p2).toShape(),
             LineSegment(p2, p3).toShape(),
             LineSegment(p3, p4).toShape(),
             LineSegment(p4, p1).toShape(),
         ]
-        return edges
 
     @cached_copy
     def to_shape(self) -> Shape | None:
@@ -104,5 +103,4 @@ class SvgRect(SvgShape):
         sh = Wire(edges)
         if self.style.fill_color:
             sh = Face(sh)
-        sh = sh.transformGeometry(self.transform)
-        return sh
+        return sh.transformGeometry(self.transform)

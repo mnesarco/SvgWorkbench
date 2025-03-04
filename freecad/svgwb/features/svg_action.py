@@ -5,10 +5,6 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from enum import Enum
-from typing import Generator
-
-from FreeCAD import Document  # type: ignore
-from Part import Shape  # type: ignore
 
 from ..config import resources
 from ..svg.database import SvgDatabase, SvgEntity
@@ -16,9 +12,18 @@ from ..vendor.fcapi import fpo
 from ..vendor.fcapi.utils import run_later
 from . import transformations as trsf
 from .svg_object import FeatureBuilder, SvgPartFeature, SvgPlaneFeature, SvgSketchFeature
+from typing import TYPE_CHECKING, ClassVar
+
+if TYPE_CHECKING:
+    from ..vendor.fcapi.fpo import events
+    from Part import Shape  # type: ignore
+    from FreeCAD import Document  # type: ignore
+    from collections.abc import Generator
 
 
 class QueryType(Enum):
+    """Query criteria."""
+
     ById = "Id"
     ByLabel = "Label"
     ByTag = "Tag"
@@ -27,6 +32,8 @@ class QueryType(Enum):
 
 
 class ShapeOutput(Enum):
+    """Shape output type."""
+
     Shape = "Shape"
     Vertices = "Vertices"
     Edges = "Edges"
@@ -42,27 +49,31 @@ class ShapeOutput(Enum):
 
 @fpo.view_proxy(icon=resources.icon("svg-query.svg"))
 class SvgActionViewProvider(fpo.ViewProxy):
+    """View provider for Svg actions."""
+
     Default = fpo.DisplayMode(is_default=True)
 
-    def on_edit_start(self, event) -> bool:
+    def on_edit_start(self, event: events.EditStartEvent) -> bool:
         if event.mode == fpo.EditMode.Default:
             from .svg_action_task import ActionTaskPanel
 
             self.task_panel = ActionTaskPanel(event.source.Proxy)
             self.task_panel.show()
             return True
+        return False
 
-    def on_edit_end(self, event):
-        if event.mode == fpo.EditMode.Default:
-            return True
+    def on_edit_end(self, event: events.EditEndEvent) -> bool:
+        return event.mode == fpo.EditMode.Default
 
-    def on_dbl_click(self, event) -> bool:
+    def on_dbl_click(self, event: events.DoubleClickEvent) -> bool:
         event.view_provider.Document.setEdit(self.Object, fpo.EditMode.Default)
         return True
 
 
 @fpo.proxy(view_proxy=SvgActionViewProvider, subtype="Svg::Action")
 class SvgActionFeature(fpo.DataProxy):
+    """Action DocumentObject Proxy."""
+
     source = fpo.PropertyLinkHidden(mode=fpo.PropertyMode.Hidden)
 
     query_type = fpo.PropertyEnumeration(
@@ -93,12 +104,12 @@ class SvgActionFeature(fpo.DataProxy):
     )
 
     file_hash = fpo.PropertyString(
-        mode=fpo.PropertyMode.Hidden | fpo.PropertyMode.NoRecompute | fpo.PropertyMode.Output
+        mode=fpo.PropertyMode.Hidden | fpo.PropertyMode.NoRecompute | fpo.PropertyMode.Output,
     )
 
     _dirty: bool = False
 
-    _must_recompute = {
+    _must_recompute: ClassVar[set[str]] = {
         "QueryType",
         "OutputType",
         "Compound",
@@ -106,7 +117,7 @@ class SvgActionFeature(fpo.DataProxy):
         "Source",
     }
 
-    _immediate_recompute = {
+    _immediate_recompute: ClassVar[set[str]] = {
         "QueryType",
         "OutputType",
         "Compound",
@@ -115,7 +126,7 @@ class SvgActionFeature(fpo.DataProxy):
     def _hash_changed(self) -> bool:
         return self.source and self.file_hash != self.source.FileHash
 
-    def on_change(self, event: fpo.events.PropertyChangedEvent) -> None:
+    def on_change(self, event: events.PropertyChangedEvent) -> None:
         property_name = event.property_name
         self._dirty = property_name in self._must_recompute
         if property_name in self._immediate_recompute:
@@ -136,7 +147,7 @@ class SvgActionFeature(fpo.DataProxy):
             case _:
                 return db.find_all()
 
-    def select_behavior(self) -> FeatureBuilder:
+    def select_behavior(self) -> FeatureBuilder:  # noqa: C901, PLR0911
         match self.output_type:
             case ShapeOutput.Sketch:
                 return FeatureBuilder(SvgSketchFeature, trsf.passthrough)
@@ -188,10 +199,7 @@ class SvgActionFeature(fpo.DataProxy):
             return False
 
         query = self.query
-        if self.query_type != QueryType.All and (query is None or query.strip() == ""):
-            return False
-
-        return True
+        return not (self.query_type != QueryType.All and (query is None or query.strip() == ""))
 
     def on_execute(self, event: fpo.events.ExecuteEvent) -> None:
         if not self._hash_changed() and not self._dirty:

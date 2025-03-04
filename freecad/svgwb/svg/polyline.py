@@ -12,8 +12,11 @@ from Part import Face, LineSegment, Shape, Wire  # type: ignore
 from .shape import SvgShape
 from .cache import cached_copy
 
+
 @dataclass
 class SvgPolyLine(SvgShape):
+    """Polygon Edge"""
+
     points: list[float]
     close: bool = False
 
@@ -37,7 +40,7 @@ class SvgPolyLine(SvgShape):
         if self.close:
             points = points + points[:2]  # emulate closed path
 
-        for svg_x, svg_y in zip(points[2::2], points[3::2]):
+        for svg_x, svg_y in zip(points[2::2], points[3::2], strict=False):
             current_v = Vector(svg_x, -svg_y, 0)
             if not equals(last_v, current_v):
                 seg = LineSegment(last_v, current_v).toShape()
@@ -48,7 +51,6 @@ class SvgPolyLine(SvgShape):
             sh = Wire(path)
             if self.style.fill_color and sh.isClosed():
                 sh = Face(sh)
-            sh = sh.transformGeometry(self.transform)
-            return sh
+            return sh.transformGeometry(self.transform)
 
         return None

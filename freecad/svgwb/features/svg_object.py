@@ -4,17 +4,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, TypeAlias, Callable
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import FreeCAD as App  # type: ignore
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from FreeCAD import Document, DocumentObject  # type: ignore
     from Part import Shape  # type: ignore
     import FreeCADGui as Gui  # type: ignore
     from ..svg.database import SvgEntity
-    ShapeTransformer: TypeAlias = Callable[[Shape], Shape]
 
+    ShapeTransformer: TypeAlias = Callable[[Shape], Shape]
 
 
 def is_sketch_like(obj: DocumentObject) -> bool:
@@ -23,6 +24,8 @@ def is_sketch_like(obj: DocumentObject) -> bool:
 
 @dataclass
 class SvgObjectFeature:
+    """Base DocumentObject creator/updater."""
+
     name: str
     id: str
     tag: str
@@ -36,8 +39,9 @@ class SvgObjectFeature:
         self,
         obj: DocumentObject,
         action: DocumentObject,
+        *,
         is_plane: bool = False,
-    ):
+    ) -> None:
         obj.addProperty("App::PropertyString", "SvgPath", "Svg", "")
         obj.addProperty("App::PropertyString", "SvgId", "Svg", "")
         obj.addProperty("App::PropertyString", "SvgLabel", "Svg", "")
@@ -55,7 +59,7 @@ class SvgObjectFeature:
         obj.Label = self.label or self.id or ""
         self.update_prop_status(obj, "ReadOnly")
 
-    def update_prop_status(self, obj: DocumentObject, status: str):
+    def update_prop_status(self, obj: DocumentObject, status: str) -> None:
         for prop in (
             "SvgPath",
             "SvgId",
@@ -68,7 +72,7 @@ class SvgObjectFeature:
             obj.setPropertyStatus(prop, status)
         obj.setPropertyStatus("Placement", "Hidden")
 
-    def update_common_props(self, obj: DocumentObject, *, is_plane: bool = False):
+    def update_common_props(self, obj: DocumentObject, *, is_plane: bool = False) -> None:
         self.update_prop_status(obj, "-ReadOnly")
         obj.SvgPath = self.path or ""
         obj.SvgId = self.id or ""
@@ -84,6 +88,8 @@ class SvgObjectFeature:
 
 @dataclass
 class SvgPartFeature(SvgObjectFeature):
+    """Part::FeatureExt creator/updater."""
+
     def add_to_document(self, doc: Document, action: DocumentObject) -> DocumentObject:
         obj = doc.getObject(self.name)
 
@@ -107,6 +113,8 @@ class SvgPartFeature(SvgObjectFeature):
 
 @dataclass
 class SvgSketchFeature(SvgObjectFeature):
+    """Sketch creator/updater."""
+
     def add_to_document(self, doc: Document, action: DocumentObject) -> DocumentObject:
         from Draft import make_sketch  # type: ignore
 
@@ -118,7 +126,7 @@ class SvgSketchFeature(SvgObjectFeature):
 
         if obj:
             self.update_common_props(obj)
-            obj.delGeometries([i for i in range(obj.GeometryCount)])
+            obj.delGeometries(list(range(obj.GeometryCount)))
             make_sketch(self.shape, autoconstraints=True, addTo=obj)
             obj.recompute()
             return obj
@@ -131,8 +139,13 @@ class SvgSketchFeature(SvgObjectFeature):
 
 @dataclass
 class SvgPlaneFeature(SvgObjectFeature):
+    """Plane/DatumPlane creator/updater."""
+
     def add_geometry(
-        self, doc: Document, obj: DocumentObject, action: DocumentObject
+        self,
+        doc: Document,
+        obj: DocumentObject,
+        action: DocumentObject,
     ) -> DocumentObject:
         if obj and (obj.TypeId != "Part::FeatureExt" or not getattr(obj, "SvgIsPlane", False)):
             doc.removeObject(obj.Name)
@@ -158,7 +171,10 @@ class SvgPlaneFeature(SvgObjectFeature):
         return obj
 
     def add_datum(
-        self, doc: Document, obj: DocumentObject, action: DocumentObject
+        self,
+        doc: Document,
+        obj: DocumentObject,
+        action: DocumentObject,
     ) -> DocumentObject:
         if obj and obj.TypeId != "App::Plane":
             doc.removeObject(obj.Name)
@@ -169,7 +185,8 @@ class SvgPlaneFeature(SvgObjectFeature):
         start = edge.firstVertex().CenterOfGravity
         end = edge.lastVertex().CenterOfGravity
         line_vec = end - start
-        if line_vec.Length < 1e-6:
+        MIN_SIZE = 1e-6  # noqa: N806
+        if line_vec.Length < MIN_SIZE:
             return None
 
         z = App.Vector(0, 0, 1)
@@ -212,10 +229,10 @@ class SvgPlaneFeature(SvgObjectFeature):
         vo.Transparency = 85
 
 
-
-
 @dataclass
 class FeatureBuilder:
+    """Adapter between SvgEntity and DocumentObject."""
+
     feature: type[SvgObjectFeature]
     transform: ShapeTransformer
     options: dict[str, Any] | None = None
@@ -239,3 +256,4 @@ class FeatureBuilder:
                 self.options,
             )
             return feature.add_to_document(parent.Document, parent)
+        return None

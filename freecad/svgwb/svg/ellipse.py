@@ -14,6 +14,8 @@ from .cache import cached_copy
 
 @dataclass
 class SvgEllipse(SvgShape):
+    """Ellipse Edge"""
+
     cx: float
     cy: float
     rx: float
@@ -35,5 +37,4 @@ class SvgEllipse(SvgShape):
             sh.rotate(c, Vector(0, 0, 1), 90)
         if self.style.fill_color:
             sh = Face(Wire([sh]))
-        sh = sh.transformGeometry(self.transform)
-        return sh
+        return sh.transformGeometry(self.transform)

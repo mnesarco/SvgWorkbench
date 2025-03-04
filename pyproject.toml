@@ -1,6 +1,6 @@
 [project]
 name = "SvgWorkbench"
-version = "1.0.0.dev2"
+version = "1.0.0.dev3"
 description = "FreeCAD Svg Workbench"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -40,26 +40,28 @@ indent-width = 4
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "ANN401",
     "ANN002",
     "ANN003",
+    "ANN401",
+    "D100",
+    "D102",
     "D103",
+    "D104",
+    "D105",
     "D200",
     "D212",
     "D400",
+    "D401",
     "D415",
     "I001",
     "N802",
+    "N806",
+    "N813",
     "PGH003",
     "SIM108",
     "SIM117",
-    "UP038",
     "TID252",
-    "D100",
-    "D102",
-    "D104",
-    "D105",
-    "D401",
+    "UP038"
 ]
 
 [tool.ruff.lint.flake8-annotations]

@@ -161,14 +161,17 @@ _SVG_COLORS_LOWER = {k.lower(): v for k, v in _SVG_COLORS.items()}
 
 
 class SvgColor:
-    def __init__(self, source):
+    """Svg color parser/converter"""
+
+    def __init__(self, source: str) -> None:
         self.source = source
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.source
 
     def as_tuple(self) -> tuple[float, float, float, float]:
-        """Check if the given string is an RGB value, or if it is a named color.
+        """
+        Check if the given string is an RGB value, or if it is a named color.
 
         Parameters
         ----------
@@ -180,9 +183,10 @@ class SvgColor:
         tuple
         (r, g, b, a)
             RGBA float tuple, where each value is between 0.0 and 1.0.
+
         """
         color = self.source
-        if color == "none":
+        if color is None or color == "none":
             return (0.0, 0.0, 0.0, 0.0)
 
         if color[0] == "#":
@@ -201,9 +205,8 @@ class SvgColor:
                 b = float(int(color[3], 16) * 17 / 255.0)
                 return (r, g, b, 0.0)
 
-        if color.lower().startswith("rgb(") or color.lower().startswith(
-            "rgba("
-        ):  # Color string 'rgb[a](0.12,0.23,0.3,0.0)'
+        if color.lower().startswith("rgb"):
+            # Color string 'rgb[a](0.12,0.23,0.3,0.0)'
             cvalues = color.lstrip("rgba(").rstrip(")").replace("%", "").split(",")
             if len(cvalues) == 3:
                 a = 1.0
@@ -229,6 +232,8 @@ class SvgColor:
 
 @dataclass(slots=True)
 class SvgStyle:
+    """Supported svg styles"""
+
     stroke_color: SvgColor | None = None
     stroke_width: float | None = None
     fill_color: SvgColor | None = None

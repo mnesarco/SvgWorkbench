@@ -10,9 +10,12 @@ from .shape import SvgShape
 from .cache import cached_copy, cached_copy_list, cached_property
 from .object import SvgObject
 
+
 @dataclass
 class SvgGroup(SvgShape):
-    _children: list[SvgShape] = field(default_factory=lambda: [])
+    """Group of shapes"""
+
+    _children: list[SvgShape] = field(default_factory=list)
 
     @cached_copy
     def to_shape(self) -> Shape | None:
@@ -33,7 +36,7 @@ class SvgGroup(SvgShape):
                     shapes.append(shape)
         return [s for s in shapes if s]
 
-    def append(self, shape: SvgShape):
+    def append(self, shape: SvgShape) -> None:
         self._children.append(shape)
 
     @cached_property

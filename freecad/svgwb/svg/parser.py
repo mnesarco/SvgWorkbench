@@ -97,7 +97,7 @@ class SvgContentHandler(sax.ContentHandler):
             return m
         return UNIT
 
-    def get_style(self, tag: str, attrs: Attrs) -> SvgStyle:
+    def get_style(self, _tag: str, attrs: Attrs) -> SvgStyle:
         pairs = attrs.get("style", "").split(";")
         pairs = (tuple(v.strip() for v in pair.split(":")) for pair in pairs)
         data = dict(v for v in pairs if len(v) == 2)
@@ -140,7 +140,7 @@ class SvgContentHandler(sax.ContentHandler):
 
     def get_common(
         self,
-        tag,
+        tag: str,
         attrs: Attrs,
         unit_scaling: Matrix | None = None,
     ) -> tuple[str, str, Matrix, SvgStyle, SvgOptions]:
@@ -158,7 +158,7 @@ class SvgContentHandler(sax.ContentHandler):
             self.count += 1
             handler(tag, attrs)
 
-    def endElement(self, tag) -> None:
+    def endElement(self, tag: str) -> None:
         if self.muted:
             self.muted.pop()
             return
@@ -176,12 +176,12 @@ class SvgContentHandler(sax.ContentHandler):
             inks_ver_f = parsers.parse_inkscape_version(inks_full_ver)
             # Inkscape before 0.92 used 90 dpi as resolution
             # Newer versions use 96 dpi
-            OLD_INKSCAPE_VER = 0.92  # noqa: N806
+            OLD_INKSCAPE_VER = 0.92
             if inks_ver_f < OLD_INKSCAPE_VER:
                 self.dpi = 90.0
             else:
                 self.dpi = 96.0
-        else:
+        else:  # noqa: PLR5501
             # exact scaling is calculated later below. Here we just want
             # to skip the DPI dialog if a unit is specified in the viewbox
             if (width := attrs.get("width")) and ("mm" in width or "in" in width or "cm" in width):
@@ -381,14 +381,16 @@ class SvgParseResult:
 
 
 def parse(
-    filename: str | Path, preferences: SvgImportPreferences, dpi_fallback: float = 96.0
+    filename: str | Path,
+    preferences: SvgImportPreferences,
+    dpi_fallback: float = 96.0,
 ) -> SvgParseResult:
-    parser = sax.make_parser()  # NOTE: use defusedxml instead. But it is an external dependency.
-    parser.setFeature(sax.handler.feature_external_ges, False)
+    parser = sax.make_parser()  # NOTE: use defusedxml instead. # noqa: S317
+    parser.setFeature(sax.handler.feature_external_ges, False)  # noqa: FBT003
     handler = SvgContentHandler(preferences, dpi_fallback)
     parser.setContentHandler(handler)
 
-    BUFFER_SIZE = 4096  # noqa: N806
+    BUFFER_SIZE = 4096
     hasher = md5(usedforsecurity=False)
     with Path(filename).open("rb") as f:
         while data := f.read(BUFFER_SIZE):

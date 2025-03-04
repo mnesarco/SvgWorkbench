@@ -1,15 +1,21 @@
 # SPDX-License: LGPL-3.0-or-later
 # (c) 2025 Frank David Martínez Muñoz. <mnesarco at gmail.com>
 
+# ruff: noqa: S608
+
+from __future__ import annotations
+
 import re
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
 from sqlite3 import Connection, connect
-from typing import Callable, Generator, Iterable
-
+from typing import Any, TYPE_CHECKING
 from Part import Shape  # type: ignore
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Generator, Iterable
 
 
 @contextmanager
@@ -34,7 +40,7 @@ def connection(path: str | Path) -> Generator[Connection, None, None]:
         con.close()
 
 
-def in_params(params) -> str:
+def in_params(params: list[Any]) -> str:
     return ",".join("?" * len(params))
 
 
@@ -46,6 +52,8 @@ def lower_trim_list(items: list[str] | str) -> list[str]:
 
 @dataclass
 class SvgEntity:
+    """Persistent Topological Shape"""
+
     id: str
     tag: str
     label: str
@@ -56,11 +64,13 @@ class SvgEntity:
     @cached_property
     def shape(self) -> Shape:
         shape = Shape()
-        shape.importBrepFromString(self.brep, False)
+        shape.importBrepFromString(self.brep, False)  # noqa: FBT003
         return shape
 
 
 class SvgDatabase:
+    """Svg Database"""
+
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
 
@@ -95,7 +105,7 @@ class SvgDatabase:
                     ON objects(label);
             """)
 
-    def _query(self, sql: str, params=None) -> list[SvgEntity]:
+    def _query(self, sql: str, params: list[Any] | None = None) -> list[SvgEntity]:
         with connection(self.path) as con:
             if params is None:
                 cursor = con.execute(sql)
@@ -104,7 +114,10 @@ class SvgDatabase:
             return [SvgEntity(*cols) for cols in cursor.fetchall()]
 
     def find_by_pattern(
-        self, patterns: list[str] | str, field: str, include_brep: bool = True
+        self,
+        patterns: list[str] | str,
+        field: str,
+        include_brep: bool = True,
     ) -> list[SvgEntity]:
         params = (re.sub(r"%+", "\\%", s) for s in lower_trim_list(patterns))
         params = (re.sub(r"_+", "\\_", s) for s in params)
@@ -117,9 +130,9 @@ class SvgDatabase:
                     SELECT id, tag, label, path, href {brep}
                     FROM objects
                     WHERE {valid_fields.get(field, "id")} LIKE ? ESCAPE '\\'
-                    """
+                    """,
             ]
-            * len(params)
+            * len(params),
         )
         return self._query(
             f"SELECT sq.* FROM ({subquery}) sq ORDER BY sq.path",
@@ -135,7 +148,7 @@ class SvgDatabase:
     def find_by_label(self, labels: list[str] | str, include_brep: bool = True) -> list[SvgEntity]:
         return self.find_by_pattern(labels, "label", include_brep)
 
-    def find_by_path(self, path: str | str, include_brep: bool = True) -> list[SvgEntity]:
+    def find_by_path(self, path: str, include_brep: bool = True) -> list[SvgEntity]:
         return self.find_by_pattern([path], "path", include_brep)
 
     def find_all(self, include_brep: bool = True) -> list[SvgEntity]:

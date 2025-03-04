@@ -5,19 +5,24 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import copy
-
-from Part import Shape  # type: ignore
-
 from .shape import SvgShape
-from .index import SvgIndex
 from .cache import cached_copy, cached_copy_list, cached_property
 from .object import SvgObject
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .index import SvgIndex
+    from Part import Shape  # type: ignore
+
 
 def id_hash(parent: str, child: str) -> str:
     return f"{parent}_{child}"
 
+
 @dataclass
 class SvgUse(SvgShape):
+    """svg use (aka link)"""
+
     href: str
     x: float
     y: float
@@ -25,9 +30,9 @@ class SvgUse(SvgShape):
 
     @cached_copy
     def to_shape(self) -> Shape | None:
-        if target := self.index.find(self.href):
-            if sh := target.to_shape():
-                return sh.transformGeometry(self.transform)
+        if (target := self.index.find(self.href)) and (sh := target.to_shape()):
+            return sh.transformGeometry(self.transform)
+        return None
 
     @cached_copy_list
     def shapes(self) -> list[Shape]:

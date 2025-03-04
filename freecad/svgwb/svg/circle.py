@@ -14,6 +14,10 @@ from .cache import cached_copy
 
 @dataclass
 class SvgCircle(SvgShape):
+    """
+    Circle Edge.
+    """
+
     cx: float
     cy: float
     r: float
@@ -24,5 +28,4 @@ class SvgCircle(SvgShape):
         if self.style.fill_color:
             sh = Face(Wire([sh]))
         sh.translate(Vector(self.cx, -self.cy, 0))
-        sh = sh.transformGeometry(self.transform)
-        return sh
+        return sh.transformGeometry(self.transform)

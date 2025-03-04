@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from Part import Face # type: ignore
+    from Part import Face  # type: ignore
 
 
 class FaceTreeNode:
@@ -19,7 +19,7 @@ class FaceTreeNode:
     children: list[FaceTreeNode]
     name: str
 
-    def __init__(self, face:Face=None, name:str="root") -> None:
+    def __init__(self, face: Face = None, name: str = "root") -> None:
         super().__init__()
         self.face = face
         self.name = name
@@ -44,14 +44,18 @@ class FaceTreeNode:
         for node in self.children:
             if node.face.Area > face.Area:
                 # new face could be encompassed
-                if face.distToShape(node.face)[0] == 0.0 and \
-                        face.Wires[0].distToShape(node.face.Wires[0])[0] != 0.0:
+                if (
+                    face.distToShape(node.face)[0] == 0.0
+                    and face.Wires[0].distToShape(node.face.Wires[0])[0] != 0.0
+                ):
                     # it is encompassed - enter next tree layer
                     node.insert(face, name)
                     inserted = True
             # new face could encompass
-            elif node.face.distToShape(face)[0] == 0.0 and \
-                    node.face.Wires[0].distToShape(face.Wires[0])[0] != 0.0:
+            elif (
+                node.face.distToShape(face)[0] == 0.0
+                and node.face.Wires[0].distToShape(face.Wires[0])[0] != 0.0
+            ):
                 # it does encompass the current child nodes face
                 # create new node from face
                 if not new:
@@ -70,7 +74,7 @@ class FaceTreeNode:
     def make_cuts(self) -> None:
         """
         Recursively traverse the tree and cuts all faces in even
-        numbered tree levels with their direct childrens faces.
+        numbered tree levels with their direct children faces.
 
         Additionally the tree is shrunk by removing the odd numbered
         tree levels.

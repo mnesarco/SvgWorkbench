@@ -9,11 +9,13 @@ from FreeCAD import Document  # type: ignore
 
 
 class PlainSvgImporter:
-    def __init__(self, svg: SvgParseResult, doc: Document):
+    """Direct importer without embedded svg database."""
+
+    def __init__(self, svg: SvgParseResult, doc: Document) -> None:
         self.svg = svg
         self.doc = doc
 
-    def execute(self):
+    def execute(self) -> None:
         view = App.GuiUp
         doc = self.doc
         for svg_obj in self.svg.objects():

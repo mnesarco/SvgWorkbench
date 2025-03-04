@@ -1,11 +1,14 @@
 # SPDX-License: LGPL-3.0-or-later
 # (c) 2025 Frank David Martínez Muñoz. <mnesarco at gmail.com>
 
+# ruff: noqa: S314
+
+from __future__ import annotations
+
 import math
 import xml.etree.ElementTree as ET
 from itertools import chain
-from pathlib import Path
-from typing import Iterable, TypeAlias
+from typing import TypeAlias, TYPE_CHECKING
 
 import FreeCAD as App  # type: ignore
 from FreeCAD import BoundBox, DocumentObject, Matrix, Rotation, Vector  # type: ignore
@@ -18,6 +21,10 @@ from ..vendor.fcapi.fcui import Color
 from ..vendor.fcapi.lang import translate
 from . import parsers
 
+if TYPE_CHECKING:
+    from pathlib import Path
+    from collections.abc import Iterable
+
 Degrees: TypeAlias = float
 
 
@@ -28,9 +35,10 @@ def get_camera_direction() -> tuple[Vector, Degrees]:
     spy = LineSegment(Vector(0, 0, 0), up * 20).toShape()
     shapes: Iterable[Shape] = project(spy, direction)
     e: Edge = next(chain.from_iterable(s.Edges for s in shapes if s.isValid()), None)
-    if e and e.Length > 1e-6:
+    MIN_LEN = 1e-6
+    if e and e.Length > MIN_LEN:
         vec = e.lastVertex().CenterOfGravity
-        if vec.Length < 1e-6:
+        if vec.Length < MIN_LEN:
             vec = e.firstVertex().CenterOfGravity
         y_axis = Vector(0, 1, 0)
         v_angle = vec.getAngle(y_axis)
@@ -68,7 +76,7 @@ def get_direction(pref: SvgExportPreferences) -> tuple[Vector, Matrix, Degrees]:
     return direction.normalize(), m, 0
 
 
-def project_bounding_box(bb: BoundBox, direction: Vector, rotation: Degrees):
+def project_bounding_box(bb: BoundBox, direction: Vector, rotation: Degrees) -> BoundBox:
     x, y, z = bb.XMax - bb.XMin, bb.YMax - bb.YMin, bb.ZMax - bb.ZMin
     box = makeBox(max(x, 1), max(y, 1), max(z, 1))
     box.Placement.Base = Vector(bb.XMin, bb.YMin, bb.ZMin)
@@ -92,10 +100,10 @@ def export(
     translated = pref.transform() == 0
     scale: float = pref.scale()
     direction, matrix, rotation = get_direction(pref)
-    shapes, bb = get_shapes(objects, Vector(0, 0, 0), direction, matrix)
+    shapes, bb = get_shapes(objects, matrix)
     bb = project_bounding_box(bb, direction, rotation)
 
-    (min_x, min_y), (max_x, max_y), (size_x, size_y) = get_dimensions(bb, translated)
+    (min_x, min_y), (max_x, max_y), (size_x, size_y) = get_dimensions(bb, with_margins=translated)
 
     # TODO: Determine the correct viewbox
 
@@ -136,7 +144,7 @@ def export(
 
     visible_style = {
         "stroke": v_color,
-        "stroke-opacity": f"{v_alpha/255.0}",
+        "stroke-opacity": f"{v_alpha / 255.0}",
         "stroke-width": f"{v_width}mm",
         "stroke-linecap": "butt",
         "stroke-linejoin": "miter",
@@ -153,7 +161,7 @@ def export(
     hidden_style = {
         "stroke": v_color,
         "stroke-width": f"{v_width}mm",
-        "stroke-opacity": f"{v_alpha/255.0}",
+        "stroke-opacity": f"{v_alpha / 255.0}",
         "stroke-dasharray": v_dash,
         "stroke-linecap": "butt",
         "stroke-linejoin": "miter",
@@ -204,7 +212,8 @@ def export(
 
 
 def get_shapes(
-    objects: list[DocumentObject], center: Vector, direction: Vector, matrix: Matrix
+    objects: list[DocumentObject],
+    matrix: Matrix,
 ) -> tuple[list[tuple[Shape, str, str]], BoundBox]:
     bb = BoundBox()
     shapes = []
@@ -226,7 +235,11 @@ def add_hairline_effect(elem: ET.Element) -> None:
             sub.set("style", "-inkscape-stroke:hairline;vector-effect:non-scaling-stroke")
 
 
-def get_dimensions(bb: BoundBox, with_margins: bool):
+def get_dimensions(
+    bb: BoundBox,
+    *,
+    with_margins: bool,
+) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float]]:
     """
     Determine the size of the page by adding the bounding boxes of all shapes
     """

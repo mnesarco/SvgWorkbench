@@ -7,14 +7,16 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from .options import SvgOptions
+    from .style import SvgStyle
     from FreeCAD import Matrix, DocumentObject  # type: ignore
     from Part import Shape  # type: ignore
 
-from .style import SvgStyle
-from .options import SvgOptions
 
 @dataclass
 class SvgShape:
+    """Base Svg shape"""
+
     tag: str
     id: str
     label: str
@@ -25,7 +27,7 @@ class SvgShape:
     def to_shape(self) -> Shape | None:
         return None
 
-    def apply_style(self, obj: DocumentObject):
+    def apply_style(self, obj: DocumentObject) -> None:
         vo = obj.ViewObject
         if self.style.stroke_color:
             vo.LineColor = self.style.stroke_color.as_tuple()
