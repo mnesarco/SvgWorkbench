@@ -1,6 +1,6 @@
 [project]
 name = "SvgWorkbench"
-version = "1.0.0.dev3"
+version = "1.0.0.dev4"
 description = "FreeCAD Svg Workbench"
 readme = "README.md"
 requires-python = ">=3.10"
