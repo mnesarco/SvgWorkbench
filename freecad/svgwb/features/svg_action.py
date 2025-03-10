@@ -256,6 +256,8 @@ class SvgActionFeature(fpo.DataProxy):
             obj = doc.getObject(comp_name)
             if not obj:
                 obj = doc.addObject("Part::Compound", comp_name)
+                obj.addExtension("Part::AttachExtensionPython")
+                obj.changeAttacherType("Attacher::AttachEnginePlane")
             obj.Links = compound
             obj.Label = comp_label
             obj.recompute()

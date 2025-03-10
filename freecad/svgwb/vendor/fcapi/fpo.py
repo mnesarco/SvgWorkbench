@@ -311,6 +311,17 @@ def _resolve_uri(path: str, base_dir: Path | None = None) -> str:
 _Pct = TypeVar("_Pct")
 
 
+def _property_and_meta(prop: Property) -> tuple[Property, property]:
+    """Create an additional property to retrieve the property meta."""
+
+    @property
+    def _get_meta(target: Proxy) -> PropertyMeta:
+        """Return updatable metadata of the property."""
+        return PropertyMeta(prop, target.__so_ref__)
+
+    return prop, _get_meta
+
+
 class _prop_constructor(Generic[_Pct]):  # Allow return inferred return type
     """Create a constructor for a specific Property Type."""
 
@@ -328,8 +339,14 @@ class _prop_constructor(Generic[_Pct]):  # Allow return inferred return type
         mode: PropertyMode | None = None,
         observer_func: Callable | None = None,
         link_property: str | bool = False,
-    ) -> Property[_Pct]:
-        return Property(
+        meta: bool = False,
+    ) -> Property[_Pct] | tuple[Property[_Pct], PropertyMeta]:
+        """
+        Real Type is: Property[_Pct] | tuple[Property[_Pct], property].
+
+        Function type is faked to allow property code completion.
+        """
+        prop = Property(
             type=self.prop_type,
             section=section,
             observer_func=observer_func,
@@ -339,6 +356,10 @@ class _prop_constructor(Generic[_Pct]):  # Allow return inferred return type
             description=description,
             mode=PropertyMode.Default if mode is None else mode,
         )
+
+        if meta:
+            return _property_and_meta(prop)
+        return prop
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -424,22 +445,69 @@ class FeatureState(_DocIntEnum):
 class PropertyMode(_DocIntEnum):
     """Property mode flags."""
 
-    Default = 0, "No special property type"
-    ReadOnly = 1, "Property is read-only in the editor"
-    Transient = 2, "Property won't be saved to file"
-    Hidden = 4, "Property won't appear in the editor"
-    Output = 8, "Modified property doesn't touch its parent container"
-    NoRecompute = 16, "Modified property doesn't touch its container for recompute"
-    NoPersist = 32, "Property won't be saved to file at all"
+    # fmt: off
+    Default = 0,       "No special property type"
+    ReadOnly = 1,      "Property is read-only in the editor"
+    Transient = 2,     "Property won't be saved to file"
+    Hidden = 4,        "Property won't appear in the editor"
+    Output = 8,        "Modified property doesn't touch its parent container"
+    NoRecompute = 16,  "Modified property doesn't touch its container for recompute"
+    NoPersist = 32,    "Property won't be saved to file at all"
+    # fmt: on
 
 
 ##% ────────────────────────────────────────────────────────────────────────────
 class PropertyEditorMode(_DocIntEnum):
     """Editor Modes."""
 
-    Default = 0, "No special mode"
-    ReadOnly = 1, "Property is read only in the editor"
-    Hidden = 2, "Property is hidden in the editor"
+    # fmt: off
+    Default = 0,   "No special mode"
+    ReadOnly = 1,  "Property is read only in the editor"
+    Hidden = 2,    "Property is hidden in the editor"
+    # fmt: on
+
+
+class PropertyStatus(_DocIntEnum):
+    """Property status managed by setPropertyStatus/getPropertyStatus."""
+
+    # fmt: off
+    Touched = 0,             "touched property"
+    Immutable = 1,           "can't modify property"
+    ReadOnly = 2,            "for property editor"
+    Hidden = 3,              "for property editor"
+    Transient = 4,           "for property container save"
+    MaterialEdit = 5,        "to turn ON PropertyMaterial edit"
+    NoMaterialListEdit = 6,  "to turn OFF PropertyMaterialList edit"
+    Output = 7,              "same effect as Prop_Output"
+    LockDynamic = 8,         "prevent being removed from dynamic property"
+    NoModify = 9,            "prevent causing Gui::Document::setModified()"
+    PartialTrigger = 10,     "allow change in partial doc"
+    NoRecompute = 11,        "don't touch owner for recompute on property change"
+    Single = 12,             "for save/load of floating point numbers"
+    Ordered = 13,            "for PropertyLists whether the order of the elements is relevant for the container using it"
+    EvalOnRestore = 14,      "In case of expression binding, evaluate the expression on restore and touch the object on value change."
+    Busy = 15,               "internal use to avoid recursive signaling"
+    CopyOnChange = 16,       "for Link to copy the linked object on change of the property with this flag"
+    UserEdit = 17,           "cause property editor to create button for user defined editing"
+
+    # The following bits are corresponding to PropertyType set when the
+    # property added. These types are meant to be static, and cannot be
+    # changed in runtime. It is mirrored here to save the linear search
+    # required in PropertyContainer::getPropertyType()
+
+    PropDynamic = 21,      "indicating the property is dynamically added"
+    PropNoPersist = 22,    "corresponding to Prop_NoPersist"
+    PropNoRecompute = 23,  "corresponding to Prop_NoRecompute"
+    PropReadOnly = 24,     "corresponding to Prop_ReadOnly"
+    PropTransient = 25,    "corresponding to Prop_Transient"
+    PropHidden = 26,       "corresponding to Prop_Hidden"
+    PropOutput = 27,       "corresponding to Prop_Output"
+
+    User1 = 28,  "user-defined status"
+    User2 = 29,  "user-defined status"
+    User3 = 30,  "user-defined status"
+    User4 = 31,  "user-defined status"
+    # fmt: on
 
 
 ##% ────────────────────────────────────────────────────────────────────────────
@@ -489,7 +557,7 @@ class Property(Generic[_PT]):
     default: _PT  # Initial value
     description: str  # GUI description
     mode: PropertyMode  # PropertyEditor mode for the property
-    enum: Enum  # Type of enum used by "App::PropertyEnumeration"
+    enum: type[Enum]  # Type of enum used by "App::PropertyEnumeration"
     options: Callable  # Callable that provides a list of options
 
     # ──────────
@@ -505,7 +573,7 @@ class Property(Generic[_PT]):
         default: _Pct | None = None,
         description: str = "",
         mode: PropertyMode = PropertyMode.Default,
-        enum: Enum | None = None,
+        enum: type[Enum] | None = None,
         options: Callable | None = None,
     ) -> None:
         self.type = type
@@ -579,21 +647,80 @@ class Property(Generic[_PT]):
         return None
 
     # ──────────
-    def set_mode(self, obj: ObjectRef, mode: PropertyEditorMode) -> None:
+    def set_mode(self, obj: ObjectRef, mode: PropertyEditorMode | int | str | list[str]) -> None:
         """Change editor mode for the property."""
         if hasattr(obj, self.name):
             obj.setEditorMode(self.name, mode)
 
     # ──────────
-    def set_status(self, obj: ObjectRef, status: str) -> None:
+    def set_status(
+        self,
+        obj: ObjectRef,
+        status: str | int | PropertyStatus | list[str | int | PropertyStatus],
+    ) -> None:
         """Change editor status for the property."""
         if hasattr(obj, self.name):
             obj.setPropertyStatus(self.name, status)
 
     if TYPE_CHECKING:
-
+        # This fake typing here is to allow code completion to infer the property type
         def __get__(self, obj, obj_type=None) -> _PT: ...  # noqa: ANN001
         def __set__(self, obj, value: _PT) -> None: ...  # noqa: ANN001
+
+
+##% ────────────────────────────────────────────────────────────────────────────
+class PropertyMeta:
+    """Property metadata proxy"""
+
+    prop: Property
+    target: ObjectRef
+
+    def __init__(self, property: Property, target: ObjectRef) -> None:
+        """Bounded property proxy to ObjectRef"""
+        self.prop = property
+        self.target = target
+
+    @property
+    def mode(self) -> list[str]:
+        return self.target.getEditorMode(self.prop.name)
+
+    @mode.setter
+    def mode(self, value: PropertyEditorMode | int | str | list[str]) -> None:
+        self.prop.set_mode(self.target, value)
+
+    @property
+    def status(self) -> list[PropertyStatus]:
+        return list(map(PropertyStatus, self.target.getPropertyStatus(self.prop.name)))
+
+    @status.setter
+    def status(self, value: str | int | PropertyStatus | list[str | int | PropertyStatus]) -> None:
+        self.prop.set_status(self.target, value)
+
+    @property
+    def enum(self) -> type[Enum] | None:
+        return self.prop.enum
+
+    @enum.setter
+    def enum(self, value: type[Enum]) -> None:
+        self.prop.enum = value
+        setattr(self.target, self.prop.name, [str(e.value) for e in list(value)])
+
+    @property
+    def options(self) -> list[str | int] | None:
+        return self.target.getEnumerationsOfProperty(self.prop.name)
+
+    @options.setter
+    def options(self, value: list[str | int]) -> None:
+        setattr(self.target, self.prop.name, list(map(str, value)))
+
+    @property
+    def description(self) -> str:
+        return self.target.getDocumentationOfProperty(self.prop.name)
+
+    @description.setter
+    def description(self, value: str) -> None:
+        self.prop.description = value
+        self.target.setDocumentationOfProperty(self.prop.name, value)
 
 
 ##% ────────────────────────────────────────────────────────────────────────────
@@ -2422,6 +2549,7 @@ _ET = TypeVar("_ET")
 
 def PropertyEnumeration(
     enum: type[_ET],
+    *,
     name: str | None = None,
     section: str = "Data",
     default: _ET | None = None,
@@ -2429,9 +2557,10 @@ def PropertyEnumeration(
     mode: PropertyMode = PropertyMode.Default,
     observer_func: Callable | None = None,
     link_property: str | None = None,
-) -> Property[Enum]:
+    meta: bool = False,
+) -> Property[_ET] | tuple[Property[_ET], PropertyMeta]:
     """Create Enumeration Property."""
-    return Property(
+    prop = Property(
         type="App::PropertyEnumeration",
         section=section,
         observer_func=observer_func,
@@ -2443,11 +2572,16 @@ def PropertyEnumeration(
         enum=enum,
     )
 
+    if meta:
+        return _property_and_meta(prop)
+    return prop
+
 
 ##: Special constructor for Options property type
 ##: ────────────────────────────────────────────────────────────────────────────
 def PropertyOptions(
     options_provider: Callable,
+    *,
     name: str | None = None,
     section: str = "Data",
     default: Any = None,
@@ -2455,9 +2589,10 @@ def PropertyOptions(
     mode: PropertyMode = PropertyMode.Default,
     observer_func: Callable | None = None,
     link_property: str | None = None,
-) -> Property[str]:
+    meta: bool = False,
+) -> Property[str] | tuple[Property[str], PropertyMeta]:
     """Create Options Property."""
-    return Property(
+    prop = Property(
         type="App::PropertyEnumeration",
         section=section,
         observer_func=observer_func,
@@ -2468,6 +2603,10 @@ def PropertyOptions(
         mode=mode,
         options=options_provider,
     )
+
+    if meta:
+        return _property_and_meta(prop)
+    return prop
 
 
 # ┌───────────────────────────────────────────────────────────────────────────┐
