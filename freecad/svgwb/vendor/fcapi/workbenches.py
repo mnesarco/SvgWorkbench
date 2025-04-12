@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from contextlib import suppress
 from enum import Enum
 from typing import Protocol, TypeAlias
 from collections.abc import Callable
@@ -411,11 +412,13 @@ class Rules:
         wbm = WorkbenchManipulator()
         setattr(Gui, self.name, wbm)
         Gui.addWorkbenchManipulator(wbm)
-        Gui.activeWorkbench().reloadActive()
+        with suppress(Exception):
+            Gui.activeWorkbench().reloadActive()
 
     def uninstall(self) -> None:
         if wbm := getattr(Gui, self.name, None):
             App.Console.PrintLog(f"Uninstalling WorkbenchManipulator: {self.name}.\n")
             Gui.removeWorkbenchManipulator(wbm)
             delattr(Gui, self.name)
-            Gui.activeWorkbench().reloadActive()
+            with suppress(Exception):
+                Gui.activeWorkbench().reloadActive()

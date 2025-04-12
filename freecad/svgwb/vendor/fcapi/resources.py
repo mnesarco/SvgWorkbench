@@ -25,7 +25,10 @@ class Resources:
         return str(base.joinpath(path))
 
     def __call__(self, path: str) -> str:
-        return str(self._pkg.joinpath(path))
+        t_path = self._pkg
+        for part in path.split("/"):
+            t_path = t_path / part
+        return str(t_path)
 
     @events.app.gui_up
     def on_gui(self, _event) -> None:
