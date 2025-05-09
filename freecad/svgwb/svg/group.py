@@ -9,7 +9,7 @@ from Part import makeCompound as make_compound  # type: ignore
 from .shape import SvgShape
 from .cache import cached_copy, cached_copy_list, cached_property
 from .object import SvgObject
-
+from copy import copy
 
 @dataclass
 class SvgGroup(SvgShape):
@@ -34,7 +34,7 @@ class SvgGroup(SvgShape):
                 shape = s.to_shape()
                 if shape:
                     shapes.append(shape)
-        return [s for s in shapes if s]
+        return [s.transformGeometry(self.transform) for s in shapes if s]
 
     def append(self, shape: SvgShape) -> None:
         self._children.append(shape)
@@ -43,12 +43,15 @@ class SvgGroup(SvgShape):
     def objects(self) -> list[SvgObject]:
         objects: list[SvgObject] = []
         parent_id = self.id
-        for s in self._children:
+        for child in self._children:
+            s = copy(child)
             if hasattr(s, "objects"):
                 for obj in s.objects:
                     obj.path = f"{parent_id}/{obj.path}"
+                    obj.shape.transform = self.transform * obj.shape.transform
                     objects.append(obj)
             else:
                 obj = SvgObject(s.id, f"{parent_id}/{s.id}", s)
+                obj.shape.transform = self.transform * obj.shape.transform
                 objects.append(obj)
         return objects

@@ -9,6 +9,8 @@ from .shape import SvgShape
 from .cache import cached_copy, cached_copy_list, cached_property
 from .object import SvgObject
 from typing import TYPE_CHECKING
+from .parsers import parse_svg_transform
+from FreeCAD import Matrix, Vector  # type: ignore
 
 if TYPE_CHECKING:
     from .index import SvgIndex
@@ -27,11 +29,16 @@ class SvgUse(SvgShape):
     x: float
     y: float
     index: SvgIndex
+    move: Matrix | None = None
+
+    def __post_init__(self) -> None:
+        self.move = Matrix()
+        self.move.move(Vector(self.x, -self.y, 0))
 
     @cached_copy
     def to_shape(self) -> Shape | None:
         if (target := self.index.find(self.href)) and (sh := target.to_shape()):
-            return sh.transformGeometry(self.transform)
+            return sh.transformGeometry(self.transform * self.move)
         return None
 
     @cached_copy_list
@@ -43,7 +50,7 @@ class SvgUse(SvgShape):
             results = target.shapes()
         else:
             results = [target.to_shape()]
-        return [s.transformGeometry(self.transform) for s in results if s]
+        return [s.transformGeometry(self.transform * self.move) for s in results if s]
 
     @cached_property
     def objects(self) -> list[SvgObject]:
@@ -76,5 +83,5 @@ class SvgUse(SvgShape):
 
     def transformed(self, shape: SvgShape) -> SvgShape:
         sh = copy.copy(shape)
-        sh.transform = self.transform.multiply(sh.transform)
+        sh.transform = self.transform * sh.transform * self.move
         return sh

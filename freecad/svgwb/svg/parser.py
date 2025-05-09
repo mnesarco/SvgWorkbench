@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, astuple
+from functools import reduce
 from pathlib import Path
 from typing import TYPE_CHECKING
 from xml import sax
@@ -76,26 +77,20 @@ class SvgContentHandler(sax.ContentHandler):
         label = attrs.get("label") or attrs.get("inkscape:label") or id
         return id, label
 
-    def get_transform(self, attrs: Attrs, unit_scaling: Matrix | None = None) -> Matrix:
+    def get_transform(self, _tag: str, attrs: Attrs, unit_scaling: Matrix | None = None) -> Matrix:
         transforms: list[Matrix] = []
 
-        if parent := self.stack[-1].transform:
-            transforms.append(Matrix(parent))
-
-        if unit_scaling:
+        if unit_scaling and not (unit_scaling.isNull() or unit_scaling.isUnity()):
             transforms.append(Matrix(unit_scaling))
 
-        if tr := attrs.get("transform"):
-            transforms.append(parsers.parse_svg_transform(tr))
+        if (
+            (tr := attrs.get("transform"))
+            and (m := parsers.parse_svg_transform(tr))
+            and not (m.isNull() or m.isUnity())
+        ):
+            transforms.append(m)
 
-        UNIT = Matrix()
-        transforms = [t for t in transforms if not (t.isNull() or t.isUnity())]
-        if transforms:
-            m, *ms = transforms
-            for mx in ms:
-                m = m.multiply(mx)
-            return m
-        return UNIT
+        return reduce(Matrix.multiply, transforms, Matrix())
 
     def get_style(self, _tag: str, attrs: Attrs) -> SvgStyle:
         pairs = attrs.get("style", "").split(";")
@@ -125,7 +120,7 @@ class SvgContentHandler(sax.ContentHandler):
             style.font_size = parsers.parse_size(font_size, f"css{self.dpi!s}")
         return style
 
-    def get_options(self, tag: str, attrs: Attrs, id: str, transform: Matrix) -> SvgOptions:
+    def get_options(self, tag: str, attrs: Attrs, id_: str, transform: Matrix) -> SvgOptions:
         options = SvgOptions(skip=attrs.get("freecad:skip", False))
         if dim_start := attrs.get("freecad:basepoint1"):
             dim_end = attrs.get("freecad:basepoint2")
@@ -134,7 +129,18 @@ class SvgContentHandler(sax.ContentHandler):
             x2, y2 = parsers.parse_floats(dim_end)
             x3, y3 = parsers.parse_floats(dim_label)
             options.dimension = SvgDimension(
-                tag, id, id, transform, None, None, x1, y1, x2, y2, x3, y3
+                tag,
+                id_,
+                id_,
+                transform,
+                None,
+                None,
+                x1,
+                y1,
+                x2,
+                y2,
+                x3,
+                y3,
             )
         return options
 
@@ -145,7 +151,7 @@ class SvgContentHandler(sax.ContentHandler):
         unit_scaling: Matrix | None = None,
     ) -> tuple[str, str, Matrix, SvgStyle, SvgOptions]:
         id, label = self.get_id_and_label(tag, attrs)
-        transform = self.get_transform(attrs, unit_scaling)
+        transform = self.get_transform(tag, attrs, unit_scaling)
         style = self.get_style(tag, attrs)
         options = self.get_options(tag, attrs, id, transform)
         return id, label, transform, style, options
@@ -288,6 +294,8 @@ class SvgContentHandler(sax.ContentHandler):
         id, label, transform, style, options = self.get_common(tag, attrs)
         x, y = parsers.SvgAttrs(attrs, self.dpi).get_size_attrs(x=0, y=0)
         href = attrs.get("xlink:href", "")
+        if not href:
+            href = attrs.get("href", "")
         href = href.removeprefix("#")
         shape = SvgUse(tag, id, label, transform, style, options, href, x, y, self.index)
         self.push(StackFrame(shape, options, style, transform))
