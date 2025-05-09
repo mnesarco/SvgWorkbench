@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.11'",
@@ -670,7 +671,7 @@ wheels = [
 
 [[package]]
 name = "svgworkbench"
-version = "1.0.0.dev5"
+version = "1.0.0.dev6"
 source = { virtual = "." }
 
 [package.dev-dependencies]
