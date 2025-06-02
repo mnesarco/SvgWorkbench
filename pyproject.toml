@@ -17,7 +17,7 @@ authors = [
 keywords = ["svg", "2d", "freecad", "addons", "workbench"]
 
 [project.urls]
-repository = "https://github.com/mnesarco/SvgWorkbench/"
+repository = "https://github.com/mnesarco/SvgWorkbench"
 documentation = "https://github.com/mnesarco/SvgWorkbench/wiki/"
 readme = "https://github.com/mnesarco/SvgWorkbench/blob/main/README.md"
 
