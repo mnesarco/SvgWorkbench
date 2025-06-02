@@ -28,7 +28,6 @@
     <url type="documentation">https://github.com/mnesarco/SvgWorkbench/wiki/</url>
     <url type="readme">https://github.com/mnesarco/SvgWorkbench/blob/main/README.md</url>
     <url type="repository" branch="main">https://github.com/mnesarco/SvgWorkbench</url>
-    <url type="repository" branch="main">https://github.com/mnesarco/SvgWorkbench/</url>
     <depend type="internal">draft</depend>
     <depend type="internal">part</depend>
     <depend type="internal">techdraw</depend>
