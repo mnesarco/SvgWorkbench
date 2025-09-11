@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import math
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET  # nosec B405: parsing will be from defusedxml if available
 from itertools import chain
 from typing import TypeAlias, TYPE_CHECKING
 
@@ -20,6 +20,11 @@ from ..preferences import SvgExportPreferences
 from ..vendor.fcapi.fcui import Color
 from ..vendor.fcapi.lang import translate
 from . import parsers
+
+try:
+    from defusedxml.ElementTree import fromstring
+except ImportError:
+    from xml.etree.ElementTree import fromstring  # nosec B405: parsing will be from defusedxml if available
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -193,7 +198,7 @@ def export(
         g.set("inkscape:label", label)
         g.set("transform", transform)
         code = generate(shape)
-        elements = ET.fromstring(code)
+        elements = fromstring(code)  # nosec B314: from defusedxml if available
         for elem in elements:
             if non_scaling:
                 add_hairline_effect(elem)

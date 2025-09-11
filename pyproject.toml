@@ -31,6 +31,7 @@ dev = [
     "typer",
     "packaging",
     "rich",
+    "bandit[toml]>=1.8.6",
 ]
 
 [tool.ruff]
@@ -77,3 +78,6 @@ freecad-min = "1.0"
 # lupdate-files = []
 lupdate-langs = ["es", "en", "de", "fr"]
 internal-dependencies = ["techdraw", "draft", "part"]
+
+[tool.bandit]
+exclude_dirs = [".venv", "freecad/svgwb/vendor/fcapi/devutils"]

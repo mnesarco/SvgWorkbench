@@ -9,8 +9,14 @@ from dataclasses import dataclass, astuple
 from functools import reduce
 from pathlib import Path
 from typing import TYPE_CHECKING
-from xml import sax
 from hashlib import md5
+
+from xml import sax # nosec B406: parsing will be from defusedxml if available
+
+try:
+    from defusedxml.sax import make_parser
+except ImportError:
+    from xml.sax import make_parser  # nosec B406: parsing will be from defusedxml if available
 
 from .text import SvgText
 from .style import SvgColor, SvgStyle
@@ -393,7 +399,7 @@ def parse(
     preferences: SvgImportPreferences,
     dpi_fallback: float = 96.0,
 ) -> SvgParseResult:
-    parser = sax.make_parser()  # NOTE: use defusedxml instead. # noqa: S317
+    parser = make_parser()  # nosec: defusedxml version used if available, # noqa: S317
     parser.setFeature(sax.handler.feature_external_ges, False)  # noqa: FBT003
     handler = SvgContentHandler(preferences, dpi_fallback)
     parser.setContentHandler(handler)

@@ -130,12 +130,12 @@ class SvgDatabase:
                     SELECT id, tag, label, path, href {brep}
                     FROM objects
                     WHERE {valid_fields.get(field, "id")} LIKE ? ESCAPE '\\'
-                    """,
+                    """,  # nosec B608
             ]
             * len(params),
         )
         return self._query(
-            f"SELECT sq.* FROM ({subquery}) sq ORDER BY sq.path",
+            f"SELECT sq.* FROM ({subquery}) sq ORDER BY sq.path",  # nosec B608
             params,
         )
 
@@ -158,7 +158,7 @@ class SvgDatabase:
             SELECT id, tag, label, path, href {brep}
             FROM objects
             ORDER BY path
-            """,
+            """,  # nosec B608
         )
 
     def add(self, entity: SvgEntity) -> None:
