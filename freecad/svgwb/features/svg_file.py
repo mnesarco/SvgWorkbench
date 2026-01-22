@@ -29,7 +29,7 @@ class SvgFileViewProvider(fpo.ViewProxy):
 
     Default = fpo.DisplayMode(is_default=True)
 
-    def on_claim_children(self, _event: fpo.events.ClaimChildrenEvent) -> list[DocumentObject]:
+    def on_claim_children(self, event: fpo.events.ClaimChildrenEvent) -> list[DocumentObject]:
         return list(find_child_actions(self.Object))
 
     def on_context_menu(self, event: fpo.events.ContextMenuEvent) -> None:
@@ -98,7 +98,7 @@ class SvgFileFeature(fpo.DataProxy):
             child.recompute()
 
     def create_action(self) -> None:
-        from .svg_action import SvgActionFeature
+        from .svg_action import SvgActionFeature, QueryType
 
         obj: DocumentObject = SvgActionFeature.create(name="SvgA001", label="Action.001")
         obj.Source = self.Object
@@ -108,7 +108,11 @@ class SvgFileFeature(fpo.DataProxy):
         self.Object.touch()
         self.Object.Document.recompute()
         if vo := obj.ViewObject:
-            vo.Document.setEdit(obj, fpo.EditMode.Default)
+            if "_clipboard_" in (self.external_file or ""):
+                obj.Proxy.query_type = QueryType.All
+                obj.recompute()
+            else:
+                vo.Document.setEdit(obj, fpo.EditMode.Default)
 
     @external_file.observer
     def on_external_file_change(self, _) -> None:

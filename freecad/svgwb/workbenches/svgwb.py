@@ -6,7 +6,7 @@ from ..vendor.fcapi.lang import QT_TRANSLATE_NOOP
 from ..config import resources, commands
 
 # Import commands to register them
-from ..commands import import_svg, export_svg, create_svg_file_object  # noqa: F401
+from ..commands import import_svg, export_svg, create_svg_file_object, paste_svg, sync_all  # noqa: F401
 
 
 class SvgWorkbench(Workbench):
