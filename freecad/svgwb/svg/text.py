@@ -53,11 +53,11 @@ class SvgText(SvgShape):
 
         vo = obj.ViewObject
         ViewProviderText(vo)
-        if self.style.font_size:
+        if self.style.font_size and hasattr(vo, "FontSize"):
             vo.FontSize = self.style.font_size
-        if self.style.fill_color:
+        if self.style.fill_color and hasattr(vo, "TextColor"):
             vo.TextColor = self.style.fill_color.as_tuple()
-        if self.style.stroke_color:
+        if self.style.stroke_color and hasattr(vo, "LineColor"):
             vo.LineColor = self.style.stroke_color.as_tuple()
-        if self.style.stroke_width:
+        if self.style.stroke_width and hasattr(vo, "LineWidth"):
             vo.LineWidth = self.style.stroke_width

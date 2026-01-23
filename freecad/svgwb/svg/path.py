@@ -8,7 +8,7 @@ import re
 from dataclasses import dataclass
 from .face_tree import FaceTreeNode
 
-from FreeCAD import Vector  # type: ignore
+from FreeCAD import Vector, Console, Matrix  # type: ignore
 from Part import (  # type: ignore
     Arc,
     BezierCurve,
@@ -18,6 +18,7 @@ from Part import (  # type: ignore
     LineSegment,
     Shape,
     Edge,
+    OCCError,
 )
 from Part import makeCompound as make_compound  # type: ignore
 
@@ -367,7 +368,7 @@ class SvgSubPath:
                     _d2 = pole2.distanceToLine(last_v, next_v)
                     if _d1 < _precision and _d2 < _precision:
                         # poles and endpoints are all on a line
-                        _seg = LineSegment(self.last_v, next_v)
+                        _seg = LineSegment(last_v, next_v)
                         seg = _seg.toShape()
                     else:
                         b = BezierCurve()
@@ -440,7 +441,7 @@ class SvgPath(SvgShape):
     def shapes(self) -> list[Shape]:
         paths = self._compute_sub_paths()
         cnt = count(1)
-        open_shapes = []
+        open_shapes: list[Shape] = []
         faces = FaceTreeNode()
 
         for sub_path in paths:
@@ -468,8 +469,16 @@ class SvgPath(SvgShape):
                     open_shapes.append(sh)
 
         faces.make_cuts()
-        shapes = chain(faces.flatten(), open_shapes)
-        return [face.transformGeometry(self.transform) for face in shapes]
+        tr_faces = (transform_geometry(face, self.transform) for face in faces.flatten())
+        tr_open = (transform_geometry(wire, self.transform) for wire in open_shapes)
+        return [shape for shape in chain(tr_faces, tr_open) if shape]
+
+
+def transform_geometry(shape: Shape, transform: Matrix) -> Shape | None:
+    try:
+        return shape.transformGeometry(transform)
+    except OCCError:
+        return None
 
 
 def approx_bspline(

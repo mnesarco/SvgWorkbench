@@ -108,8 +108,8 @@ class SvgFileFeature(fpo.DataProxy):
         self.Object.touch()
         self.Object.Document.recompute()
         if vo := obj.ViewObject:
+            obj.Proxy.query_type = QueryType.All
             if "_clipboard_" in (self.external_file or ""):
-                obj.Proxy.query_type = QueryType.All
                 obj.recompute()
             else:
                 vo.Document.setEdit(obj, fpo.EditMode.Default)

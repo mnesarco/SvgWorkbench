@@ -29,11 +29,11 @@ class SvgShape:
 
     def apply_style(self, obj: DocumentObject) -> None:
         vo = obj.ViewObject
-        if self.style.stroke_color:
+        if self.style.stroke_color and hasattr(vo, "LineColor"):
             vo.LineColor = self.style.stroke_color.as_tuple()
-        if self.style.stroke_width:
+        if self.style.stroke_width and hasattr(vo, "LineWidth"):
             vo.LineWidth = self.style.stroke_width
-        if self.style.fill_color:
+        if self.style.fill_color and hasattr(vo, "ShapeAppearance"):
             appearance = vo.ShapeAppearance[0]
             appearance.DiffuseColor = self.style.fill_color.as_tuple()
             vo.ShapeAppearance = appearance

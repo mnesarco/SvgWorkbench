@@ -18,16 +18,23 @@ import FreeCAD as App  # type: ignore
 )
 def ImportSvg() -> None:
     """Import an svg file into the document."""
-    from pathlib import Path
-    from ..preferences import SvgImportPreferences
     from ..vendor.fcapi import fcui as ui
-    from ..svg import parser, processor
-    from ..vendor.fcapi.preferences import gui_pages
 
     svg_file = ui.get_open_file(
         translate("SvgWB", "Import svg file"),
         translate("SvgWB", "Svg files (*.svg)"),
     )
+
+    if svg_file:
+        import_svg(svg_file)
+
+
+def import_svg(svg_file: str) -> None:
+    from pathlib import Path
+    from ..preferences import SvgImportPreferences
+    from ..vendor.fcapi import fcui as ui
+    from ..svg import parser, processor
+    from ..vendor.fcapi.preferences import gui_pages
 
     if not svg_file or not Path(svg_file).exists():
         return

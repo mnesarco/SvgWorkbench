@@ -19,7 +19,9 @@ class SvgWorkbench(Workbench):
     Icon = resources.icon("svgwb.svg")
 
     def on_activated(self) -> None:
+        from freecad.svgwb.plugins import file_explorer
         self.wbm.install()
+        file_explorer.init()
 
     def on_deactivated(self) -> None:
         self.wbm.uninstall()
