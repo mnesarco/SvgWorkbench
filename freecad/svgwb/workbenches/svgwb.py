@@ -6,7 +6,7 @@ from ..vendor.fcapi.lang import QT_TRANSLATE_NOOP
 from ..config import resources, commands
 
 # Import commands to register them
-from ..commands import import_svg, export_svg, create_svg_file_object, paste_svg, sync_all  # noqa: F401
+from ..commands import import_svg, export_svg, create_svg_file_object, paste_svg, sync_all, copy_svg  # noqa: F401
 
 
 class SvgWorkbench(Workbench):
@@ -32,3 +32,6 @@ class SvgWorkbench(Workbench):
         rules = Rules("SvgWB_WBM")
         rules.menubar_insert("SvgWB_ImportSvg", after="Std_Import")
         self.wbm = rules
+
+    def on_context_menu(self, recipient: str, menu: ToolSet) -> None:
+        menu.add([copy_svg.CopySvg])
