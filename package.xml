@@ -1,7 +1,7 @@
 <package format="1">
     <name>SvgWorkbench</name>
     <description>FreeCAD Svg Workbench</description>
-    <version>1.0.0.dev9</version>
+    <version>1.0.0.dev10</version>
     <content>
         <workbench>
             <name>Svg</name>

@@ -34,4 +34,4 @@ class SvgWorkbench(Workbench):
         self.wbm = rules
 
     def on_context_menu(self, recipient: str, menu: ToolSet) -> None:
-        menu.add([copy_svg.CopySvg])
+        menu.add([copy_svg.CopySvg, copy_svg.CopyElementSvg])

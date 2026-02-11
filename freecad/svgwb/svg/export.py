@@ -29,6 +29,7 @@ except ImportError:
 if TYPE_CHECKING:
     from pathlib import Path
     from collections.abc import Iterable
+    import FreeCADGui as Gui
 
 Degrees: TypeAlias = float
 
@@ -98,17 +99,26 @@ def project_bounding_box(bb: BoundBox, direction: Vector, rotation: Degrees) -> 
 
 def export(
     filename: str | Path,
-    objects: list[DocumentObject],
+    objects: list[DocumentObject | Gui.SelectionObject],
     preferences: SvgExportPreferences | None = None,
+    normal: Vector | None = None,
 ) -> None:
     pref = preferences or SvgExportPreferences()
     translated = pref.transform() == 0
     scale: float = pref.scale()
-    direction, matrix, rotation = get_direction(pref)
+
+    if normal:
+        direction = normal
+        matrix = Matrix()
+        rotation = 0
+    else:
+        direction, matrix, rotation = get_direction(pref)
+
     shapes, bb = get_shapes(objects, matrix)
     bb = project_bounding_box(bb, direction, rotation)
 
     (min_x, min_y), (max_x, max_y), (size_x, size_y) = get_dimensions(bb, with_margins=translated)
+
 
     # TODO: Determine the correct viewbox
 
@@ -217,19 +227,31 @@ def export(
 
 
 def get_shapes(
-    objects: list[DocumentObject],
+    objects: list[DocumentObject | Gui.SelectionObject],
     matrix: Matrix,
 ) -> tuple[list[tuple[Shape, str, str]], BoundBox]:
     bb = BoundBox()
     shapes = []
     for obj in objects:
-        label = obj.Label.replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
         shape: Shape
+
+        if hasattr(obj, "SubElementNames"):
+            label = obj.Object.Label.replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+            for sub in obj.SubElementNames:
+                if shape := getattr(obj.Object, "Shape", None):
+                    shape = shape.getElement(sub).transformed(matrix)
+                    shapes.append((shape, f"{obj.ObjectName}.{sub}", f"{label}.{sub}"))
+                    if (sbb := shape.BoundBox) and sbb.isValid():
+                        bb.add(sbb)
+            continue
+
         if shape := getattr(obj, "Shape", None):
+            label = obj.Label.replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
             shape = shape.transformed(matrix)
             shapes.append((shape, obj.Name, label))
             if (sbb := shape.BoundBox) and sbb.isValid():
                 bb.add(sbb)
+
     return shapes, bb
 
 

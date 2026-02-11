@@ -15,6 +15,8 @@ else:
 
 import FreeCAD as App
 
+from .topology import get_face_normal
+
 SVG_MIME_FORMATS = ["image/x-inkscape-svg", "image/svg+xml"]
 
 
@@ -38,7 +40,7 @@ def get_data_as_file(mime_format: str) -> Path:
     return file
 
 
-def copy_selection() -> None:
+def copy_selection(*, sub_elements: bool = False) -> None:
     from freecad.svgwb.svg.export import export
     from freecad.svgwb.config import export_pref, SvgExportPreferences
 
@@ -49,8 +51,25 @@ def copy_selection() -> None:
         export_pref.direction(update="Camera")
         export_pref.hairline_effect(update=True)
 
+    if sub_elements:
+        objects = App.Gui.Selection.getSelectionEx()
+    else:
+        objects = App.Gui.Selection.getSelection()
+
+    is_single_face = (
+        sub_elements
+        and len(objects) == 1
+        and len(objects[0].SubElementNames) == 1
+        and objects[0].SubElementNames[0].startswith("Face")
+    )
+
+    if is_single_face:
+        normal = get_face_normal(objects[0].Object.Shape.getElement(objects[0].SubElementNames[0]))
+    else:
+        normal = None
+
     file = Path(gettempdir()) / f"_clipboard_{hex(int(time.time()))}.svg"
-    export(str(file), App.Gui.Selection.getSelection(), export_pref)
+    export(str(file), objects, export_pref, normal)
 
     if file.exists():
         clipboard = QApplication.clipboard()

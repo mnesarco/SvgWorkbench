@@ -5,4 +5,4 @@
 Svg Workbench for FreeCAD
 """
 
-__version__ = "1.0.0.dev9"  # <fcapi:sync-version>
+__version__ = "1.0.0.dev10"  # <fcapi:sync-version>
