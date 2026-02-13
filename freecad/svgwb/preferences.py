@@ -120,7 +120,7 @@ class SvgImportPreferences(Preferences):
 )
 class SvgExportPreferences(Preferences):
     """
-    Svg Import Preferences.
+    Svg Export Preferences.
     """
 
     group = "Preferences/Mod/SvgWB/Export"

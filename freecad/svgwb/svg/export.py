@@ -292,6 +292,5 @@ def get_dimensions(
     max_y += margin
     size_x = max_x - min_x
     size_y = max_y - min_y
-    min_y += margin
 
     return (min_x, min_y), (max_x, max_y), (size_x, size_y)

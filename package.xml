@@ -16,8 +16,6 @@
     <icon>freecad/svgwb/resources/icons/svgwb.svg</icon>
     <license file="LICENSE">LGPL-3.0-or-later</license>
     <freecadmin>1.0</freecadmin>
-    <name>SvgWorkbench</name>
-    <description>FreeCAD Svg Workbench</description>
     <maintainer email="mnesarco@gmail.com">Frank David Martínez Muñoz</maintainer>
     <author email="mnesarco@gmail.com">Frank David Martínez Muñoz</author>
     <tag>2d</tag>
