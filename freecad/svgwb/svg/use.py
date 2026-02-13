@@ -60,7 +60,6 @@ class SvgUse(SvgShape):
         if not target:
             return []
         if hasattr(target, "objects"):
-            count = 1
             for obj in target.objects:
                 objects.append(
                     SvgObject(
@@ -70,7 +69,6 @@ class SvgUse(SvgShape):
                         href=self.id,
                     ),
                 )
-                count += 1
         else:
             obj = SvgObject(
                 id_hash(parent_id, target.id),
