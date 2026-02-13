@@ -74,5 +74,6 @@ def copy_selection(*, sub_elements: bool = False) -> None:
     if file.exists():
         clipboard = QApplication.clipboard()
         mime_data = QMimeData()
-        mime_data.setData("image/svg+xml", file.read_bytes())
+        for fmt in SVG_MIME_FORMATS:
+            mime_data.setData(fmt, file.read_bytes())
         clipboard.setMimeData(mime_data)

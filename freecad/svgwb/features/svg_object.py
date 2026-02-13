@@ -6,20 +6,20 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, TypeAlias
 
-import FreeCAD as App  # type: ignore
+import FreeCAD as App
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from FreeCAD import Document, DocumentObject  # type: ignore
-    from Part import Shape  # type: ignore
-    import FreeCADGui as Gui  # type: ignore
+    from FreeCAD import Document, DocumentObject
+    from Part import Shape
+    import FreeCADGui as Gui
     from ..svg.database import SvgEntity
 
     ShapeTransformer: TypeAlias = Callable[[Shape], Shape]
 
 
 def is_sketch_like(obj: DocumentObject) -> bool:
-    return obj and hasattr(obj, "delGeometries")
+    return bool(obj and hasattr(obj, "delGeometries"))
 
 
 @dataclass
@@ -42,45 +42,39 @@ class SvgObjectFeature:
         *,
         is_plane: bool = False,
     ) -> None:
-        obj.addProperty("App::PropertyString", "SvgPath", "Svg", "")
-        obj.addProperty("App::PropertyString", "SvgId", "Svg", "")
-        obj.addProperty("App::PropertyString", "SvgLabel", "Svg", "")
-        obj.addProperty("App::PropertyString", "SvgHref", "Svg", "")
-        obj.addProperty("App::PropertyString", "SvgTag", "Svg", "")
-        obj.addProperty("App::PropertyLinkHidden", "SvgAction", "Svg", "")
-        obj.addProperty("App::PropertyBool", "SvgIsPlane", "Svg", "")
-        obj.SvgPath = self.path or ""
-        obj.SvgId = self.id or ""
-        obj.SvgLabel = self.label or ""
-        obj.SvgHref = self.href or ""
-        obj.SvgTag = self.tag or ""
-        obj.SvgAction = action
-        obj.SvgIsPlane = is_plane
         obj.Label = self.label or self.id or ""
-        self.update_prop_status(obj, "ReadOnly")
+        self.update_common_props(obj, is_plane=is_plane, action=action)
 
-    def update_prop_status(self, obj: DocumentObject, status: str) -> None:
-        for prop in (
-            "SvgPath",
-            "SvgId",
-            "SvgLabel",
-            "SvgHref",
-            "SvgTag",
-            "SvgAction",
-            "SvgIsPlane",
-        ):
-            obj.setPropertyStatus(prop, status)
-        obj.setPropertyStatus("Placement", "Hidden")
+    def update_common_props(
+        self,
+        obj: DocumentObject,
+        *,
+        is_plane: bool = False,
+        action: DocumentObject | None = None,
+    ) -> None:
+        self._update_ro_prop(obj, "App::PropertyString", "SvgPath", self.path or "")
+        self._update_ro_prop(obj, "App::PropertyString", "SvgId", self.id or "")
+        self._update_ro_prop(obj, "App::PropertyString", "SvgLabel", self.label or "")
+        self._update_ro_prop(obj, "App::PropertyString", "SvgHref", self.href or "")
+        self._update_ro_prop(obj, "App::PropertyString", "SvgTag", self.tag or "")
+        self._update_ro_prop(obj, "App::PropertyBool", "SvgIsPlane", is_plane)
+        self._update_ro_prop(obj, "App::PropertyLinkHidden", "SvgAction", action)
+        if hasattr(obj, "Placement"):
+            obj.setPropertyStatus("Placement", "Hidden")
 
-    def update_common_props(self, obj: DocumentObject, *, is_plane: bool = False) -> None:
-        self.update_prop_status(obj, "-ReadOnly")
-        obj.SvgPath = self.path or ""
-        obj.SvgId = self.id or ""
-        obj.SvgLabel = self.label or ""
-        obj.SvgHref = self.href or ""
-        obj.SvgTag = self.tag or ""
-        obj.SvgIsPlane = is_plane
-        self.update_prop_status(obj, "ReadOnly")
+    def _update_ro_prop(
+        self,
+        obj: DocumentObject,
+        prop_type: str,
+        name: str,
+        value: object,
+    ) -> None:
+        try:
+            obj.setPropertyStatus(name, "-ReadOnly")
+            setattr(obj, name, value)
+        except AttributeError:
+            obj.addProperty(prop_type, name, "Svg", "")
+        obj.setPropertyStatus(name, "ReadOnly")
 
     def add_to_document(self, doc: Document, action: DocumentObject) -> DocumentObject:
         pass
@@ -98,7 +92,7 @@ class SvgPartFeature(SvgObjectFeature):
             obj = None
 
         if obj:
-            self.update_common_props(obj)
+            self.update_common_props(obj, action=action)
             obj.Shape = self.shape
             obj.recompute()
             return obj
@@ -125,7 +119,7 @@ class SvgSketchFeature(SvgObjectFeature):
             obj = None
 
         if obj:
-            self.update_common_props(obj)
+            self.update_common_props(obj, action=action)
             obj.delGeometries(list(range(obj.GeometryCount)))
             make_sketch(self.shape, autoconstraints=True, addTo=obj)
             obj.recompute()
@@ -138,21 +132,69 @@ class SvgSketchFeature(SvgObjectFeature):
 
 
 @dataclass
+class SvgSketchFastFeature(SvgObjectFeature):
+    """Sketch creator/updater, faster version without constraints and planar checks."""
+
+    def make_sketch(
+        self,
+        doc: Document,
+        shape: Shape,
+        obj: DocumentObject | None = None,
+    ) -> DocumentObject:
+        import Part
+
+        if obj is None:
+            obj = doc.addObject("Sketcher::SketchObject", self.name)
+
+        for edge in shape.Edges:
+            if isinstance(edge.Curve, Part.BezierCurve):
+                obj.addGeometry(
+                    edge.Curve.toBSpline(
+                        edge.FirstParameter,
+                        edge.LastParameter,
+                    ),
+                )
+            else:
+                obj.addGeometry(edge.Curve)
+
+        return obj
+
+    def add_to_document(self, doc: Document, action: DocumentObject) -> DocumentObject:
+        obj = doc.getObject(self.name)
+
+        if obj and not is_sketch_like(obj):
+            doc.removeObject(obj.Name)
+            obj = None
+
+        if obj:
+            self.update_common_props(obj, action=action)
+            obj.delGeometries(list(range(obj.GeometryCount)))
+            self.make_sketch(doc, self.shape, obj)
+            obj.recompute()
+            return obj
+
+        obj = self.make_sketch(doc, self.shape)
+        self.init_properties(obj, action)
+        obj.recompute()
+        return obj
+
+
+@dataclass
 class SvgPlaneFeature(SvgObjectFeature):
     """Plane/DatumPlane creator/updater."""
 
     def add_geometry(
         self,
         doc: Document,
-        obj: DocumentObject,
+        obj: DocumentObject | None,
         action: DocumentObject,
     ) -> DocumentObject:
-        if obj and (obj.TypeId != "Part::FeatureExt" or not getattr(obj, "SvgIsPlane", False)):
+        if obj and (obj.TypeId != "Part::FeatureExt"):
             doc.removeObject(obj.Name)
             obj = None
 
         if obj:
-            self.update_common_props(obj, is_plane=True)
+            self.update_common_props(obj, is_plane=True, action=action)
             obj.Shape = self.shape
             if App.GuiUp:
                 self.set_style(obj.ViewObject)
@@ -195,7 +237,7 @@ class SvgPlaneFeature(SvgObjectFeature):
         placement = App.Placement(center, App.Rotation(x, z, y, "ZXY"))
 
         if obj:
-            self.update_common_props(obj, is_plane=True)
+            self.update_common_props(obj, is_plane=True, action=action)
             obj.Placement = placement
             obj.recompute()
             return obj

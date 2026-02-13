@@ -73,6 +73,7 @@ OutputTypeDict = {
     "Center of bounding box": ShapeOutput.CenterOfBoundingBox,
     "Bounding box": ShapeOutput.BoundingBox,
     "Sketch": ShapeOutput.Sketch,
+    "Fast Sketch": ShapeOutput.SketchFast,
     "Planes as geometry": ShapeOutput.PlanesGeom,
     "Planes as datum": ShapeOutput.PlanesDatum,
 }

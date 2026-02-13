@@ -11,7 +11,13 @@ from ..svg.database import SvgDatabase, SvgEntity
 from ..vendor.fcapi import fpo
 from ..vendor.fcapi.utils import run_later
 from . import transformations as trsf
-from .svg_object import FeatureBuilder, SvgPartFeature, SvgPlaneFeature, SvgSketchFeature
+from .svg_object import (
+    FeatureBuilder,
+    SvgPartFeature,
+    SvgPlaneFeature,
+    SvgSketchFeature,
+    SvgSketchFastFeature,
+)
 from typing import TYPE_CHECKING, ClassVar
 
 if TYPE_CHECKING:
@@ -43,6 +49,7 @@ class ShapeOutput(Enum):
     CenterOfBoundingBox = "Center of bounding box"
     BoundingBox = "Bounding box"
     Sketch = "Sketch"
+    SketchFast = "Fast Sketch"
     PlanesGeom = "Planes as geometry"
     PlanesDatum = "Planes as datum"
 
@@ -151,6 +158,8 @@ class SvgActionFeature(fpo.DataProxy):
         match self.output_type:
             case ShapeOutput.Sketch:
                 return FeatureBuilder(SvgSketchFeature, trsf.passthrough)
+            case ShapeOutput.SketchFast:
+                return FeatureBuilder(SvgSketchFastFeature, trsf.passthrough)
             case ShapeOutput.Vertices:
                 return FeatureBuilder(SvgPartFeature, trsf.shape_to_vertices)
             case ShapeOutput.Edges:
