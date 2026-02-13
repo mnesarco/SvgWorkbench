@@ -1,7 +1,11 @@
 <package format="1">
     <name>SvgWorkbench</name>
     <description>FreeCAD Svg Workbench</description>
-    <version>1.0.0.dev12</version>
+    <version>1.0.0.dev13</version>
+    <date>2026-01-22</date>
+    <icon>freecad/svgwb/resources/icons/svgwb.svg</icon>
+    <license file="LICENSE">LGPL-3.0-or-later</license>
+
     <content>
         <workbench>
             <name>Svg</name>
@@ -11,21 +15,20 @@
             <icon>freecad/svgwb/resources/icons/svgwb.svg</icon>
         </workbench>
     </content>
-    <date>2026-01-22</date>
+
     <pythonmin>3.10</pythonmin>
-    <icon>freecad/svgwb/resources/icons/svgwb.svg</icon>
-    <license file="LICENSE">LGPL-3.0-or-later</license>
     <freecadmin>1.0</freecadmin>
+
     <maintainer email="mnesarco@gmail.com">Frank David Martínez Muñoz</maintainer>
     <author email="mnesarco@gmail.com">Frank David Martínez Muñoz</author>
+
     <tag>2d</tag>
-    <tag>addons</tag>
-    <tag>freecad</tag>
     <tag>svg</tag>
-    <tag>workbench</tag>
+
     <url type="documentation">https://github.com/mnesarco/SvgWorkbench/wiki/</url>
     <url type="readme">https://github.com/mnesarco/SvgWorkbench/blob/main/README.md</url>
     <url type="repository" branch="main">https://github.com/mnesarco/SvgWorkbench</url>
+
     <depend type="internal">draft</depend>
     <depend type="internal">part</depend>
     <depend type="internal">techdraw</depend>
