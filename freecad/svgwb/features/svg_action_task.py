@@ -60,6 +60,7 @@ QueryTypeDict = {
     "Tag": QueryType.ByTag,
     "Path": QueryType.ByPath,
     "Label": QueryType.ByLabel,
+    "Group": QueryType.ByGroup,
     "All": QueryType.All,
 }
 

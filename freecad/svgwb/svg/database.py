@@ -122,17 +122,29 @@ class SvgDatabase:
         params = (re.sub(r"%+", "\\%", s) for s in lower_trim_list(patterns))
         params = (re.sub(r"_+", "\\_", s) for s in params)
         params = [s.replace("*", "%") for s in params]
-        valid_fields = {"tag": "tag", "id": "id", "label": "label", "path": "path"}
+        valid_fields = {
+            "tag": "tag",
+            "id": "id",
+            "label": "label",
+            "path": "path",
+            "group": "group",
+        }
+
         brep = ", brep" if include_brep else ""
+
+        field = valid_fields.get(field, "id")
+        if field == "group":
+            field = "path"
+            params = [f"%/{g}/%" for g in params]
+
+        individual = f"""
+            SELECT id, tag, label, path, href {brep}
+            FROM objects
+            WHERE {field} LIKE ? ESCAPE '\\'
+            """  # nosec B608
+
         subquery = " UNION ALL ".join(
-            [
-                f"""
-                    SELECT id, tag, label, path, href {brep}
-                    FROM objects
-                    WHERE {valid_fields.get(field, "id")} LIKE ? ESCAPE '\\'
-                    """,  # nosec B608
-            ]
-            * len(params),
+            [individual] * len(params),
         )
         return self._query(
             f"SELECT sq.* FROM ({subquery}) sq ORDER BY sq.path",  # nosec B608
@@ -141,6 +153,9 @@ class SvgDatabase:
 
     def find_by_tag(self, tags: list[str] | str, include_brep: bool = True) -> list[SvgEntity]:
         return self.find_by_pattern(tags, "tag", include_brep)
+
+    def find_by_group(self, groups: list[str] | str, include_brep: bool = True) -> list[SvgEntity]:
+        return self.find_by_pattern(groups, "group", include_brep)
 
     def find_by_id(self, ids: list[str] | str, include_brep: bool = True) -> list[SvgEntity]:
         return self.find_by_pattern(ids, "id", include_brep)

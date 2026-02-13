@@ -34,6 +34,7 @@ class QueryType(Enum):
     ByLabel = "Label"
     ByTag = "Tag"
     ByPath = "Path"
+    ByGroup = "Group"
     All = "All"
 
 
@@ -151,6 +152,8 @@ class SvgActionFeature(fpo.DataProxy):
                 return db.find_by_tag(query)
             case QueryType.ByLabel:
                 return db.find_by_label(query)
+            case QueryType.ByGroup:
+                return db.find_by_group(query)
             case _:
                 return db.find_all()
 
