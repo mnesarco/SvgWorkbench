@@ -35,4 +35,4 @@ class PasteSvgFileObject:
         obj.recompute()
 
     def is_active(self) -> bool:
-        return bool(App.GuiUp and App.activeDocument())
+        return bool(App.GuiUp and App.activeDocument() and clipboard.find_format())

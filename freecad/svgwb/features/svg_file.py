@@ -44,7 +44,11 @@ class SvgFileViewProvider(fpo.ViewProxy):
             action.triggered.connect(event.source.Proxy.create_action)
             event.menu.addAction(action)
 
-        if event.source.Proxy.external_file and Path(event.source.Proxy.external_file).exists():
+        if (
+            event.source.Proxy.external_file
+            and Path(event.source.Proxy.external_file).exists()
+            and "_clipboard_" not in event.source.Proxy.external_file
+        ):
             action = ui.QAction(
                 ui.QIcon(resources.icon("sync.svg")),
                 translate("SvgWB", "Sync with external svg file"),
@@ -53,6 +57,7 @@ class SvgFileViewProvider(fpo.ViewProxy):
             action.triggered.connect(event.source.Proxy.sync_file)
             event.menu.addAction(action)
 
+        if event.source.Proxy.internal_file and Path(event.source.Proxy.internal_file).exists():
             action = ui.QAction(
                 ui.QIcon(resources.icon("extract.svg")),
                 translate("SvgWB", "Extract original svg file"),
@@ -91,11 +96,12 @@ class SvgFileFeature(fpo.DataProxy):
     file_hash = fpo.PropertyString(mode=HiddenOutputMode, section="Files")
 
     def sync_file(self) -> None:
-        self.internal_file = self.external_file
-        self.svg_to_sql()
-        self.Object.Document.recompute()
-        for child in find_child_actions(self.Object):
-            child.recompute()
+        if self.external_file and Path(self.external_file).exists():
+            self.internal_file = self.external_file
+            self.svg_to_sql()
+            self.Object.Document.recompute()
+            for child in find_child_actions(self.Object):
+                child.recompute()
 
     def create_action(self) -> None:
         from .svg_action import SvgActionFeature, QueryType
