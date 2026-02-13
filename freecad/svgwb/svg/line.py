@@ -26,5 +26,4 @@ class SvgLine(SvgShape):
         p1 = Vector(self.x1, -self.y1, 0)
         p2 = Vector(self.x2, -self.y2, 0)
         sh = LineSegment(p1, p2).toShape()
-        sh.transformGeometry(self.transform)
-        return sh
+        return sh.transformGeometry(self.transform)
