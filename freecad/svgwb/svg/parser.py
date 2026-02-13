@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, astuple
 from functools import reduce
+from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING
 from hashlib import md5
@@ -404,14 +405,12 @@ def parse(
     handler = SvgContentHandler(preferences, dpi_fallback)
     parser.setContentHandler(handler)
 
-    BUFFER_SIZE = 4096
-    hasher = md5(usedforsecurity=False)
-    with Path(filename).open("rb") as f:
-        while data := f.read(BUFFER_SIZE):
-            hasher.update(data)
-    file_hash = hasher.hexdigest()
+    raw = Path(filename).read_bytes()
+    file_hash = md5(raw, usedforsecurity=False).hexdigest()
 
-    with Path(filename).open(encoding="utf-8") as f:
-        parser.parse(f)
+    source = sax.xmlreader.InputSource()
+    source.setByteStream(BytesIO(raw))
+    source.setEncoding("utf-8")
+    parser.parse(source)
 
     return SvgParseResult(handler.root, handler.index, file_hash)
