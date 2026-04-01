@@ -4,7 +4,7 @@ version = "1.0.0.dev13"
 description = "FreeCAD Svg Workbench"
 readme = "README.md"
 requires-python = ">=3.10"
-license = "LGPL-3.0-or-later"
+license = "LGPL-3.0-or-later OR LGPL-2.1-or-later"
 
 maintainers = [
     {name = "Frank David Martínez Muñoz", email = "mnesarco@gmail.com" }

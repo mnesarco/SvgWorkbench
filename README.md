@@ -24,3 +24,10 @@ Dedicated workbench for imported svg geometry manipulation.
 ## Notice
 
 While the code of this project was basically written from scratch, it is based on the original importSVG.py file from the FreeCAD source code, licensed under LGPL-2.1-or-later. Some parts of the SVG parsing modules contain code from the original file.
+
+## License
+
+Any of
+
+* LGPL-2.1-or-later
+* LGPL-3.0-or-later
