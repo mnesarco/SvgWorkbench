@@ -768,7 +768,7 @@ wheels = [
 
 [[package]]
 name = "svgworkbench"
-version = "1.0.0.dev13"
+version = "1.0.0.dev14"
 source = { virtual = "." }
 
 [package.dev-dependencies]
