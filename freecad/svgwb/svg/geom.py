@@ -228,7 +228,7 @@ def equals(u: Vector, v: Vector, precision: int = -1) -> bool:
     """
     delta = u.sub(v)
     if precision == -1:
-        precision = DraftPrecision()
+        precision = DraftPrecision
     x = round(delta.x, precision)
     y = round(delta.y, precision)
     z = round(delta.z, precision)

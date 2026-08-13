@@ -1,6 +1,6 @@
 [project]
 name = "SvgWorkbench"
-version = "1.0.0.dev14"
+version = "1.0.0.dev15"
 description = "FreeCAD Svg Workbench"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -32,6 +32,7 @@ dev = [
     "packaging",
     "rich",
     "bandit[toml]>=1.8.6",
+    "defusedxml",
 ]
 
 [tool.ruff]

@@ -62,7 +62,6 @@ class SvgRect(SvgShape):
             e2a = Arc(e, math.radians(180), math.radians(270))
             e3a = Arc(e, math.radians(270), math.radians(360))
             e4a = Arc(e, math.radians(0), math.radians(90))
-            # rotate +90 degrees
             m = Matrix(0, -1, 0, 0, 1, 0)
         esh = []
         for arc, point in ((e1a, p1), (e2a, p2), (e3a, p3), (e4a, p4)):

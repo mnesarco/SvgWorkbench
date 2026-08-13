@@ -324,41 +324,52 @@ class SvgSubPath:
                     x_rotation = pdset["x_rotation"]
                     large_flag = pdset["large_flag"]
                     sweep_flag = pdset["sweep_flag"]
-                    # Calculate the possible centers for an arc
-                    # in 'endpoint parameterization'.
-                    _x_rot = math.radians(-x_rotation)
-                    (solution, (rx, ry)) = arc_end_to_center(
-                        last_v,
-                        next_v,
-                        rx,
-                        ry,
-                        x_rotation=_x_rot,
-                        correction=True,
-                    )
-                    # Choose one of the two solutions
-                    neg_sol = large_flag != sweep_flag
-                    v_center, angle1, angle_delta = solution[neg_sol]
-                    if ry > rx:
-                        rx, ry = ry, rx
-                        swap_axis = True
+                    if equals(last_v, next_v, self.precision):
+                        # SVG F.6.5: identical endpoints -> omit the segment
+                        next_v = last_v
+                    elif rx == 0 or ry == 0:
+                        # SVG F.6.6: zero radius -> treat as a straight line
+                        edges.append(LineSegment(last_v, next_v).toShape())
                     else:
-                        swap_axis = False
-                    e1 = Ellipse(v_center, rx, ry)
-                    if sweep_flag:
-                        angle1 = angle1 + angle_delta
-                        angle_delta = -angle_delta
+                        # Calculate the possible centers for an arc
+                        # in 'endpoint parameterization'.
+                        _x_rot = math.radians(-x_rotation)
+                        (solution, (rx, ry)) = arc_end_to_center(
+                            last_v,
+                            next_v,
+                            rx,
+                            ry,
+                            x_rotation=_x_rot,
+                            correction=True,
+                        )
+                        # Choose one of the two solutions
+                        neg_sol = large_flag != sweep_flag
+                        v_center, angle1, angle_delta = solution[neg_sol]
+                        if ry > rx:
+                            rx, ry = ry, rx
+                            swap_axis = True
+                        else:
+                            swap_axis = False
+                        e1 = Ellipse(v_center, rx, ry)
+                        if sweep_flag:
+                            angle1 = angle1 + angle_delta
+                            angle_delta = -angle_delta
 
-                    d90 = math.radians(90)
-                    e1a = Arc(e1, angle1 - swap_axis * d90, angle1 + angle_delta - swap_axis * d90)
-                    seg = e1a.toShape()
-                    if swap_axis:
-                        seg.rotate(v_center, Vector(0, 0, 1), 90)
-                    _precision = precision_step(DraftPrecision)
-                    if abs(x_rotation) > _precision:
-                        seg.rotate(v_center, Vector(0, 0, 1), -x_rotation)
-                    if sweep_flag:
-                        seg.reverse()
-                    edges.append(seg)
+                        d90 = math.radians(90)
+                        e1a = Arc(
+                            e1,
+                            angle1 - swap_axis * d90,
+                            angle1 + angle_delta - swap_axis * d90,
+                        )
+                        seg = e1a.toShape()
+                        if swap_axis:
+                            seg.rotate(v_center, Vector(0, 0, 1), 90)
+                        _precision = precision_step(DraftPrecision)
+                        if abs(x_rotation) > _precision:
+                            seg.rotate(v_center, Vector(0, 0, 1), -x_rotation)
+                        if sweep_flag:
+                            seg.reverse()
+                        edges.append(seg)
 
                 case "cbezier":
                     pole1 = pdset["pole1"]

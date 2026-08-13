@@ -129,9 +129,9 @@ class SvgContentHandler(sax.ContentHandler):
 
     def get_options(self, tag: str, attrs: Attrs, id_: str, transform: Matrix) -> SvgOptions:
         options = SvgOptions(skip=attrs.get("freecad:skip", False))
-        if dim_start := attrs.get("freecad:basepoint1"):
-            dim_end = attrs.get("freecad:basepoint2")
-            dim_label = attrs.get("freecad:dimpoint")
+        if ((dim_start := attrs.get("freecad:basepoint1")) and
+            (dim_end := attrs.get("freecad:basepoint2")) and
+            (dim_label := attrs.get("freecad:dimpoint"))):
             x1, y1 = parsers.parse_floats(dim_start)
             x2, y2 = parsers.parse_floats(dim_end)
             x3, y3 = parsers.parse_floats(dim_label)
@@ -402,6 +402,7 @@ def parse(
 ) -> SvgParseResult:
     parser = make_parser()  # nosec: defusedxml version used if available, # noqa: S317
     parser.setFeature(sax.handler.feature_external_ges, False)  # noqa: FBT003
+    parser.setFeature(sax.handler.feature_external_pes, False)  # noqa: FBT003
     handler = SvgContentHandler(preferences, dpi_fallback)
     parser.setContentHandler(handler)
 
